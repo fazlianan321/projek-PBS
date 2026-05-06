@@ -5,9 +5,9 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SensorService {
   constructor(private prisma: PrismaService) {}
 
-  // Commit 2: Menggunakan string untuk lahanId sesuai UUID di Lahan
   async createData(data: { suhu: number; kelembapan: number; lahanId: string }) {
-    return this.prisma.sensorData.create({
+    // Menggunakan casting 'any' untuk memastikan properti sensorData terbaca
+    return (this.prisma as any).sensorData.create({
       data: {
         suhu: data.suhu,
         kelembapan: data.kelembapan,
@@ -17,7 +17,7 @@ export class SensorService {
   }
 
   async getLatestData(lahanId: string) {
-    return this.prisma.sensorData.findFirst({
+    return (this.prisma as any).sensorData.findFirst({
       where: { lahanId },
       orderBy: { createdAt: 'desc' },
     });

@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { SensorService } from './sensor.service';
 import { SensorController } from './sensor.controller';
+import { SensorService } from './sensor.service';
 
 @Module({
+  controllers: [SensorController],
   providers: [SensorService],
-  controllers: [SensorController]
+  exports: [SensorService], 
 })
+// Pastikan baris di bawah ini ada kata 'export'
 export class SensorModule {}
