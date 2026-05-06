@@ -1,23 +1,26 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  // Constructor kosong saja Fazli, biar gak kena error TS2353 lagi
+export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    super();
+    const pool = new Pool({ 
+      connectionString: process.env.DATABASE_URL 
+    });
+    const adapter = new PrismaPg(pool);
+    
+    // Di Prisma 7, kita melewatkan adapter, bukan URL string
+    super({ adapter });
   }
 
   async onModuleInit() {
     try {
       await this.$connect();
-      console.log('✅ DATABASE CONNECTED: Akhirnya bisa lanjut!');
+      console.log('✅ DATABASE CONNECTED ON PORT 5433');
     } catch (error) {
-      console.error('❌ GAGAL: Masalahnya di PostgreSQL atau .env kamu.', error);
+      console.error('❌ KONEKSI GAGAL:', error);
     }
-  }
-
-  async onModuleDestroy() {
-    await this.$disconnect();
   }
 }

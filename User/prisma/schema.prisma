@@ -6,7 +6,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // URL dikelola melalui prisma.config.ts
 }
 
 model User {
