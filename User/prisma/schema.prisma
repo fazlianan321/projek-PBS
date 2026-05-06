@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // URL dikelola melalui prisma.config.ts
 }
 
 model User {
@@ -19,18 +19,18 @@ model User {
 }
 
 model Lahan {
-  id          String       @id @default(uuid())
-  namaLahan   String
-  lokasi      String
-  deskripsi   String?
-  dataSensors SensorData[]
+  id           String       @id @default(uuid())
+  namaLahan    String
+  lokasi       String
+  deskripsi    String?
+  dataSensors  SensorData[]
 }
 
 model SensorData {
-  id         Int      @id @default(autoincrement())
-  suhu       Float
-  kelembapan Float
-  lahanId    String
-  lahan      Lahan    @relation(fields: [lahanId], references: [id])
-  createdAt  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  suhu        Float
+  kelembapan  Float
+  lahanId     String
+  lahan       Lahan    @relation(fields: [lahanId], references: [id])
+  createdAt   DateTime @default(now())
 }
