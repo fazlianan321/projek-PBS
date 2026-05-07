@@ -10,28 +10,29 @@ export class AuthService {
   ) {}
 
   async login(email: string, pass: string) {
-    // 1. Cari user berdasarkan email
+    
+    // 1. Cari user di database PostgreSQL (Port 5433)
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
-
-    // 2. Jika tidak ada user
-    if (!user) {
-      throw new UnauthorizedException('Email tidak ditemukan!');
+    if (!user || user.password !== pass) {
+      throw new UnauthorizedException('Email atau password salah, Fazli!');
     }
 
-    // 3. Cek password (karena diisi manual di Studio, kita cek teks biasa dulu)
-    if (user.password !== pass) {
-      throw new UnauthorizedException('Password salah!');
-    }
-
-    // 4. Jika sukses, buat Token JWT
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    // 3. Generate JWT Token jika login berhasil
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role 
+    };
+    
     return {
       access_token: await this.jwtService.signAsync(payload),
       user: {
-        name: user.name,
+        id: user.id,
+        name: user.nama,
         email: user.email,
+        role: user.role
       }
     };
   }
