@@ -78,3 +78,26 @@ export default function Dashboard() {
             <StatCard icon={<Wind className="text-emerald-500" />} label="Nutrisi NPK" value="Optimal" unit="" status="Kaya" />
             <StatCard icon={<Sprout className="text-lime-600" />} label="Usia Tanam" value="14" unit="Hari" status="Vegetatif" />
           </div>
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8">
+            <div className="flex justify-between items-center mb-8 px-2">
+              <h3 className="text-xl font-bold text-slate-800">Riwayat Terakhir Lahan</h3>
+              <button className="text-emerald-600 font-bold text-sm flex items-center gap-1 hover:underline">Download CSV <ChevronRight size={16}/></button>
+            </div>
+            <div className="w-full overflow-hidden">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <th className="pb-4 pl-2">Zona Pertanian</th>
+                    <th className="pb-4">Waktu Check</th>
+                    <th className="pb-4">Intensitas Air</th>
+                    <th className="pb-4 text-right pr-2">Kondisi Pompa</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  <TableRow zona="Lahan 01 - Padi" waktu="14:00 PM" hum="65%" status="Aktif" color="bg-emerald-100 text-emerald-700" />
+                  <TableRow zona="Lahan 02 - Jagung" waktu="13:45 PM" hum="58%" status="Mati" color="bg-slate-100 text-slate-400" />
+                  <TableRow zona="Lahan 03 - Cabai" waktu="13:30 PM" hum="70%" status="Aktif" color="bg-emerald-100 text-emerald-700" />
+                </tbody>
+              </table>
+            </div>
+          </div>
