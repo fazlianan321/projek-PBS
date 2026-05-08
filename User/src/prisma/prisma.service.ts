@@ -6,12 +6,14 @@ import { Pool } from 'pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL 
-    });
-    const adapter = new PrismaPg(pool);
+    // 1. Tambahkan pengecekan atau tulis langsung alamatnya
+    const connectionString = "postgresql://postgres:123@localhost:5433/db_projek_pbs?schema=public";
     
-    // Di Prisma 7, kita melewatkan adapter, bukan URL string
+    const pool = new Pool({ 
+      connectionString: connectionString 
+    });
+
+    const adapter = new PrismaPg(pool);
     super({ adapter });
   }
 
