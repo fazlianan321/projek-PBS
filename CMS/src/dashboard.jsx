@@ -59,3 +59,22 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+        <section className="flex-1 overflow-y-auto p-10 space-y-10">
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-4xl font-black text-slate-900 tracking-tight">Panel Monitoring</h2>
+              <p className="text-slate-500 font-medium mt-1 uppercase text-[10px] tracking-[0.2em]">Smart Farming Management System v2.0</p>
+            </div>
+            <div className="bg-white p-1 rounded-xl border border-slate-100 flex gap-1 shadow-sm">
+              <button className="px-4 py-2 bg-emerald-600 text-white text-[10px] font-black rounded-lg shadow-lg shadow-emerald-200 uppercase">Live Data</button>
+              <button className="px-4 py-2 text-slate-400 text-[10px] font-black hover:text-emerald-600 transition-colors uppercase italic">History</button>
+            </div>
+          </div>
+
+          {/* SENSOR GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <StatCard icon={<Thermometer className="text-orange-500" />} label="Suhu Udara" value="28.4" unit="°C" status="Stabil" />
+            <StatCard icon={<Droplets className="text-blue-500" />} label="Kelembapan" value="62" unit="%" status="Normal" />
+            <StatCard icon={<Wind className="text-emerald-500" />} label="Nutrisi NPK" value="Optimal" unit="" status="Kaya" />
+            <StatCard icon={<Sprout className="text-lime-600" />} label="Usia Tanam" value="14" unit="Hari" status="Vegetatif" />
+          </div>
