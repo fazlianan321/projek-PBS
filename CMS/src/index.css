@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+:root {
+  background-color: #f8fafc; /* Warna abu-abu sangat muda agar mata tidak cepat lelah */
+}
+
+/* Biar transisi antar elemen lebih halus */
+* {
+  @apply transition-all duration-300;
+}
