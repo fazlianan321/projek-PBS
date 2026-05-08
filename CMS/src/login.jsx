@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'                                                 // Import core hooks
+import { useState, useEffect } from 'react' 
+import { useNavigate } from 'react-router-dom';                                // Import core hooks
 import { 
   LockKeyhole, 
   Mail, 
@@ -6,23 +7,22 @@ import {
   EyeOff, 
   Loader2, 
   Leaf 
-} from 'lucide-react'                                                                      // Icons (Optional: install lucide-react)
+} from 'lucide-react'                                                                    // Icons
 
 function App() {
-  const [email, setEmail] = useState('')                                                   // State: Email input
-  const [password, setPassword] = useState('')                                             // State: Password input
-  const [showPassword, setShowPassword] = useState(false)                                  // State: Toggle lihat password
-  const [error, setError] = useState('')                                                   // State: Error message
-  const [loading, setLoading] = useState(false)                                            // State: Loading controller
-  const [isSuccess, setIsSuccess] = useState(false)                                        // State: Success animation trigger
+  const [email, setEmail] = useState('')                                                  // State: Email input
+  const [password, setPassword] = useState('')                                            // State: Password input
+  const [showPassword, setShowPassword] = useState(false)                                 // State: Toggle lihat password
+  const [error, setError] = useState('')                                                  // State: Error message
+  const [loading, setLoading] = useState(false)                                           // State: Loading controller
+  const [isSuccess, setIsSuccess] = useState(false)
+  const navigate = useNavigate();                                        // Inisialisasi navigasi
 
-// ========================================================================================= [COMMIT 2: ADVANCED AUTH LOGIC]
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    // Validasi Sederhana
     if (password.length < 6) {
       setError('Password minimal harus 6 karakter!')
       setLoading(false)
@@ -39,12 +39,13 @@ function App() {
       const data = await response.json()
 
       if (response.ok) {
-        setIsSuccess(true)                                                                 // Trigger animasi sukses
+        setIsSuccess(true)                                                                // Trigger animasi sukses
         localStorage.setItem('token', data.access_token)
         localStorage.setItem('user_data', JSON.stringify(data.user))
         
         setTimeout(() => {
-          window.location.href = '/dashboard'                                              // Delay redirect biar user liat sukses
+          // GANTI window.location.href menjadi navigate untuk navigasi internal React
+          navigate('/dashboard')                                               
         }, 1500)
       } else {
         setError(data.message || 'Kombinasi Email & Password tidak ditemukan.')
@@ -55,6 +56,7 @@ function App() {
       if (!isSuccess) setLoading(false)
     }
   }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-sans">
       <div className="w-full max-w-[440px]">
@@ -83,7 +85,6 @@ function App() {
           <p className="text-slate-400 text-sm mb-8 font-medium">Masukkan kredensial Anda untuk akses CMS.</p>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* EMAIL INPUT */}
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
               <input 
@@ -95,7 +96,6 @@ function App() {
               />
             </div>
 
-            {/* PASSWORD INPUT */}
             <div className="relative group">
               <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
               <input 
@@ -114,14 +114,12 @@ function App() {
               </button>
             </div>
 
-            {/* ERROR ALERT */}
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2">
                 <span className="text-red-600 font-bold text-sm">⚠️ {error}</span>
               </div>
             )}
 
-            {/* BUTTON SUBMIT */}
             <button 
               type="submit" 
               disabled={loading}
@@ -133,7 +131,6 @@ function App() {
           </form>
         </div>
 
-        {/* FOOTER */}
         <div className="mt-12 text-center space-y-2">
           <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">
             Universitas Teknokrat Indonesia
