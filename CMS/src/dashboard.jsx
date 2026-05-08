@@ -101,3 +101,54 @@ export default function Dashboard() {
               </table>
             </div>
           </div>
+          <footer className="pt-10 pb-4 text-center">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.5em] opacity-50">
+              Universitas Teknokrat Indonesia &bull; PBS Project &bull; 2026
+            </p>
+          </footer>
+        </section>
+      </main>
+    </div>
+  )
+}
+
+// --- REUSABLE COMPONENTS ---
+function SidebarLink({ icon, label, active, onClick }) {
+  return (
+    <div onClick={onClick} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all font-bold ${active ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/30' : 'text-emerald-400 hover:bg-white/5 hover:text-white'}`}>
+      {icon} <span className="text-sm tracking-tight">{label}</span>
+    </div>
+  )
+}
+
+function StatCard({ icon, label, value, unit, status }) {
+  return (
+    <div className="bg-white p-6 rounded-[2.2rem] shadow-lg shadow-slate-200/50 border border-slate-50 hover:border-emerald-200 transition-all cursor-default group">
+      <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">{icon}</div>
+      <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest">{label}</p>
+      <div className="flex items-baseline gap-1 mt-1">
+        <h3 className="text-3xl font-black text-slate-800 tracking-tighter">{value}</h3>
+        <span className="text-sm font-bold text-slate-300 uppercase">{unit}</span>
+      </div>
+      <div className="mt-4 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
+        <span className="text-[9px] font-black text-emerald-600 uppercase italic">{status}</span>
+      </div>
+    </div>
+  )
+}
+
+function TableRow({ zona, waktu, hum, status, color }) {
+  return (
+    <tr className="group hover:bg-slate-50/50 transition-colors">
+      <td className="py-5 pl-2 font-bold text-slate-700 text-sm">{zona}</td>
+      <td className="py-5 text-xs font-medium text-slate-500">{waktu}</td>
+      <td className="py-5 text-xs font-black text-emerald-600 uppercase">{hum}</td>
+      <td className="py-5 text-right pr-2">
+        <span className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${color}`}>
+          {status}
+        </span>
+      </td>
+    </tr>
+  )
+}
