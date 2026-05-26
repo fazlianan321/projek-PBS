@@ -6,7 +6,11 @@ import {
 
 export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState('Dashboard')
-  const userData = JSON.parse(localStorage.getItem('user_data')) || { nama: 'M Fazli Anan' }
+  
+  // Membaca data local storage dengan aman agar tidak memicu crash/blank
+  const storedUser = localStorage.getItem('user_data')
+  const userData = storedUser ? JSON.parse(storedUser) : { nama: 'M Fazli Anan' }
+  const namaDisplay = userData?.nama || 'M Fazli Anan'
 
   const handleLogout = () => {
     localStorage.clear()
@@ -52,11 +56,13 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-3 border-l pl-6 border-slate-200">
               <div className="text-right">
-                <p className="text-sm font-bold text-slate-800">{userData.nama}</p>
+                {/* AMAN: Menampilkan nama display yang sudah terproteksi */}
+                <p className="text-sm font-bold text-slate-800">{namaDisplay}</p>
                 <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Informatika UTI</p>
               </div>
               <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-emerald-200">
-                {userData.nama ? userData.nama.charAt(0) : 'M'}
+                {/* AMAN: Mencegah error charAt jika string kosong */}
+                {namaDisplay.charAt(0)}
               </div>
             </div>
           </div>
