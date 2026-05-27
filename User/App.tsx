@@ -2,37 +2,45 @@ import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import DashboardScreen from './src/screens/DashboardScreen'; // 🟢 1. Impor halaman dashboard final kamu
 
 export default function App() {
-  // State interaktif untuk memantau rute halaman mana yang sedang aktif dibuka oleh user
-  const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  // 🟢 2. Tambahkan 'DASHBOARD' ke dalam tipe state navigasi kamu
+  const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER' | 'DASHBOARD'>('LOGIN');
   
-  // 🟢 Tambahkan state baru untuk menyimpan email yang gagal didaftarkan (karena sudah ada)
   const [savedEmail, setSavedEmail] = useState('');
 
-  // 🟢 Fungsi navigasi baru yang bisa menerima kiriman email dari halaman register
   const handleNavigateToLogin = (emailFromRegister?: string) => {
     if (emailFromRegister) {
-      setSavedEmail(emailFromRegister); // Simpan emailnya di sini
+      setSavedEmail(emailFromRegister);
     }
     setCurrentScreen('LOGIN');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Pengondisian Rute: Menampilkan halaman secara dinamis berdasarkan isi state currentScreen */}
+      {/* 🟢 3. Pengondisian Rute Tiga Halaman */}
       {currentScreen === 'LOGIN' ? (
         <LoginScreen 
-          navigation={null} 
-          initialEmail={savedEmail} // 🟢 Kirim email yang tersimpan tadi ke LoginScreen
+          // 🟢 4. Ganti navigation={null} dengan fungsi tiruan untuk mengalihkan ke DASHBOARD
+          navigation={{
+            navigate: () => setCurrentScreen('DASHBOARD'),
+            replace: () => setCurrentScreen('DASHBOARD'),
+          }} 
+          initialEmail={savedEmail}
           onNavigateToRegister={() => {
-            setSavedEmail(''); // Reset email saat pindah ke register baru
+            setSavedEmail('');
             setCurrentScreen('REGISTER');
           }} 
         />
-      ) : (
+      ) : currentScreen === 'REGISTER' ? (
         <RegisterScreen 
-          onNavigateToLogin={handleNavigateToLogin} // 🟢 Gunakan fungsi baru kita yang siap menerima 1 argumen
+          onNavigateToLogin={handleNavigateToLogin}
+        />
+      ) : (
+        // 🟢 5. Tampilkan halaman Dashboard jika state bernilai 'DASHBOARD'
+        <DashboardScreen 
+          onLogout={() => setCurrentScreen('LOGIN')} 
         />
       )}
     </SafeAreaView>
