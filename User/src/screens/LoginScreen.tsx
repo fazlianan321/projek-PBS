@@ -1,16 +1,58 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { API_URL } from '../config/api'; // Pastikan file ini sudah ada dengan IP laptopmu!
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Nanti di sini kita sambungkan ke API NestJS/Golang kamu
-    if (email && password) {
-      Alert.alert('Sukses', `Selamat datang, ${email}!`);
-    } else {
+  const handleLogin = async () => {
+    // Cegah user pencet tombol berkali-kali saat sedang loading
+    if (isLoading) return;
+
+    if (!email || !password) {
       Alert.alert('Error', 'Email dan Password tidak boleh kosong!');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Menembak API NestJS kamu
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Ambil token dari respon backend (access_token)
+        const token = result.access_token;
+        
+        if (token) {
+          // Simpan token ke dalam brankas HP
+          await SecureStore.setItemAsync('userToken', token);
+        }
+
+        Alert.alert('Sukses', `Selamat datang kembali!`);
+        
+        // Pindah ke halaman Dashboard
+        navigation.replace('Dashboard');
+      } else {
+        // Tangkap pesan error kustom dari backend kamu (misal: "Email atau password salah, Fazli!")
+        Alert.alert('Login Gagal', result.message || 'Email atau password salah.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Tidak dapat terhubung ke server. Pastikan API dan IP Address benar!');
+      console.log('Error koneksi:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -29,6 +71,7 @@ export default function LoginScreen() {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          autoCapitalize="none" // Mencegah huruf pertama jadi kapital otomatis
         />
 
         <Text style={styles.label}>Password</Text>
@@ -39,9 +82,15 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
         />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>MASUK</Text>
-        </TouchableOpacity>
+        
+        {/* Tampilkan animasi loading jika sedang memproses, jika tidak tampilkan tombol */}
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#2e7d32" style={{ marginTop: 10 }} />
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>MASUK</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
