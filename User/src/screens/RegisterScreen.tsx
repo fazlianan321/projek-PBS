@@ -38,3 +38,34 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
       setIsLoading(false);
     }
   };
+
+  return (
+    <View style={styles.mainContainer}>
+      {/* PANEL KIRI: Visual Branding Tanaman Cerdas */}
+      {isDesktop && (
+        <View style={styles.leftBanner}>
+          <View style={styles.overlayPattern} />
+          <View style={styles.bannerContent}>
+            <Text style={styles.badgeText}>JOIN THE SMART FARMING REVOLUTION</Text>
+            <Text style={styles.mainHeroTitle}>Mulai Langkah{"\n"}Cerdas Anda.</Text>
+            <Text style={styles.mainHeroSubtitle}>
+              Daftarkan akun sistem Anda untuk mulai mengelola efisiensi lahan, analisis vegetasi, dan integrasi data sensor secara terpusat.
+            </Text>
+            <View style={styles.featureTagRow}>
+              <Text style={styles.featureTag}>🌱 Smart Node</Text>
+              <Text style={styles.featureTag}>📊 IoT Analytics</Text>
+              <Text style={styles.featureTag}>🔒 Secure Cloud</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* PANEL KANAN: Form Pembungkus */}
+      <View style={[styles.rightFormPanel, { width: isDesktop ? '45%' : '100%' }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.innerCardWeb}>
+            <View style={styles.headerLeftAlign}>
+              <Text style={styles.brandTitleText}>🌱 TerraVision</Text>
+              <Text style={styles.formActionText}>Daftar Akun Baru</Text>
+              <Text style={styles.formSecondaryText}>Lengkapi data diri Anda untuk bergabung ke dalam ekosistem pertanian cerdas.</Text>
+            </View>
