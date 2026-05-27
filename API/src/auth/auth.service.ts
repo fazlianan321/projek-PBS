@@ -8,7 +8,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
-  
+
   async login(email: string, pass: string) {
     // 1. Cari user di database PostgreSQL (Port 5433)
     const user = await this.prisma.user.findUnique({
@@ -36,3 +36,16 @@ export class AuthService {
       }
     };
   }
+
+  /**
+   * Mengelola pendaftaran user baru ke dalam ekosistem TerraVision
+   */
+  async register(name: string, email: string, pass: string) {
+    // Validasi: Pastikan email belum pernah digunakan
+    const userExists = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (userExists) {
+      throw new BadRequestException('Email ini sudah terdaftar di ekosistem TerraVision!');
+    }
