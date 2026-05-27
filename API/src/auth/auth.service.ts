@@ -30,7 +30,7 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
       user: {
         id: user.id,
-        nama: user.name, // Diubah ke user.name agar sinkron dengan database
+        nama: user.nama, // Diubah ke user.name agar sinkron dengan database
         email: user.email,
         role: user.role
       }
@@ -51,12 +51,13 @@ export class AuthService {
     }
 
     // Simpan data user baru dengan role default ke database
+    // Simpan data user baru ke database
     const newUser = await this.prisma.user.create({
       data: {
-        name, // Jika di skema prisma namamu 'name' atau 'nama', sesuaikan di sini
-        email,
+        nama: name, // 🟢 PASTIKAN DITULIS LENGKAP "nama: name," (jangan disingkat)
+        email: email, // Ini juga bisa ditulis lengkap "email: email," biar aman
         password: pass,
-        role: 'USER', // Default role untuk pendaftaran baru
+        role: 'USER',
       },
     });
 
