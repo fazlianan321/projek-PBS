@@ -39,4 +39,11 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
         />
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>MASUK</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
