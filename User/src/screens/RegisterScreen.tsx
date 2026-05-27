@@ -44,3 +44,45 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
       setIsLoading(false);
     }
   };
+  return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        {/* Bagian Komponen Header Register */}
+        <View style={styles.header}>
+          <Text style={styles.logoIcon}>🚀</Text>
+          <Text style={styles.title}>Daftar Akun</Text>
+          <Text style={styles.subtitle}>Bergabunglah dengan ekosistem TerraVision</Text>
+        </View>
+
+        {/* Bagian Input Form Pendaftaran */}
+        <View style={styles.form}>
+          <Text style={styles.label}>Nama Lengkap</Text>
+          <TextInput style={styles.input} placeholder="Masukkan nama lengkap Anda" value={name} onChangeText={setName} />
+
+          <Text style={styles.label}>Email</Text>
+          <TextInput style={styles.input} placeholder="Masukkan email Anda" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+
+          <Text style={styles.label}>Password</Text>
+          <TextInput style={styles.input} placeholder="Buat password minimal 6 karakter" secureTextEntry={true} value={password} onChangeText={setPassword} />
+
+          {/* Render Kondisional tombol daftar */}
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#1b4d3e" style={{ marginTop: 10 }} />
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleRegister}>
+              <Text style={styles.buttonText}>DAFTAR SEKARANG</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Tombol kembali ke Login */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Sudah punya akun? </Text>
+            <TouchableOpacity onPress={onNavigateToLogin}>
+              <Text style={styles.linkText}>Masuk di sini</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
