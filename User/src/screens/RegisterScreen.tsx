@@ -114,10 +114,12 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
               )}
 
               <View style={styles.premiumFooter}>
-                <Text style={styles.premiumFooterText}>Sudah memiliki akun? </Text>
-                <TouchableOpacity onPress={onNavigateToLogin}>
-                  <Text style={styles.premiumLinkText}>Masuk di sini</Text>
-                </TouchableOpacity>
+  <Text style={styles.premiumFooterText}>Sudah memiliki akun? </Text>
+  
+  {/* 🟢 SEKARANG SUDAH AMAN: Dibungkus arrow function () => agar tidak bentrok dengan event klik */}
+  <TouchableOpacity onPress={() => onNavigateToLogin()}>
+    <Text style={styles.premiumLinkText}>Masuk di sini</Text>
+  </TouchableOpacity>
               </View>
             </View>
           </View>
