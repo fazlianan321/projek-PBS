@@ -34,3 +34,10 @@ const [metrics] = useState({ soilMoisture: '68%', temperature: '28.5°C', humidi
   <Text style={styles.alertTitle}>⚡ Status Otomatisasi Node IoT</Text>
   <Text style={styles.alertDescription}>Sistem Irigasi Otomatis sedang Nonaktif. Pompa air aktif jika kelembaban &lt; 50%.</Text>
 </View>
+const [refreshing, setRefreshing] = useState(false);
+const onRefresh = () => {
+  setRefreshing(true);
+  setTimeout(() => setRefreshing(false), 1500); // Simulasi reload data
+};
+// Pada ScrollView pasang properti ini:
+// refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#047857']} />}
