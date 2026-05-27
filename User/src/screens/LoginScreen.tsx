@@ -59,9 +59,9 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>AgriSmart IoT</Text>
-        <Text style={styles.subtitle}>Monitoring Lahan Pertanian Cerdas</Text>
-      </View>
+  <Text style={styles.title}>TerraVision</Text> {/* Perubahan nama aplikasi menjadi TerraVision */}
+  <Text style={styles.subtitle}>Monitoring Lahan Pertanian Cerdas</Text>
+</View>
 
       <View style={styles.form}>
         <Text style={styles.label}>Email</Text>
@@ -99,9 +99,22 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4fbf4', // Warna hijau sangat muda (tema pertanian)
+    backgroundColor: '#f4f7f5', // Warna latar belakang abu kehijauan yang bersih
     justifyContent: 'center',
+    alignItems: 'center', // Membuat objek card berada pas di tengah layar
     padding: 20,
+  },
+  card: {
+    backgroundColor: '#fff',
+    width: '100%',
+    maxWidth: 400, // Membatasi lebar kotak di web agar setara ukuran HP asli
+    padding: 25,
+    borderRadius: 20,
+    shadowColor: '#000', // Efek bayangan halus di browser / iOS
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5, // Efek bayangan di perangkat Android
   },
   header: {
     alignItems: 'center',
