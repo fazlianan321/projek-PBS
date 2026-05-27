@@ -1,0 +1,35 @@
+// User/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  nama      String
+  password  String
+  role      String   @default("PETANI") // ADMIN, PETANI
+  createdAt DateTime @default(now())
+}
+
+model Lahan {
+  id           String       @id @default(uuid())
+  namaLahan    String
+  lokasi       String
+  deskripsi    String?
+  dataSensors  SensorData[]
+}
+
+model SensorData {
+  id          Int      @id @default(autoincrement())
+  suhu        Float
+  kelembapan  Float
+  lahanId     String
+  lahan       Lahan    @relation(fields: [lahanId], references: [id])
+  createdAt   DateTime @default(now())
+}
