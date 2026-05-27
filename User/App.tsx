@@ -4,9 +4,22 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 
 export default function App() {
+  // State interaktif untuk memantau rute halaman mana yang sedang aktif dibuka oleh user
+  const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+
   return (
     <SafeAreaView style={styles.container}>
-      <LoginScreen />
+      {/* Pengondisian Rute: Menampilkan halaman secara dinamis berdasarkan isi state currentScreen */}
+      {currentScreen === 'LOGIN' ? (
+        <LoginScreen 
+          navigation={null} // Sementara diisi null karena di mode web kita pakai state-routing
+          onNavigateToRegister={() => setCurrentScreen('REGISTER')} // Aksi beralih ke halaman pendaftaran
+        />
+      ) : (
+        <RegisterScreen 
+          onNavigateToLogin={() => setCurrentScreen('LOGIN')} // Aksi kembali ke halaman masuk
+        />
+      )}
     </SafeAreaView>
   );
 }
