@@ -37,12 +37,8 @@ export class AuthService {
     };
   }
 
-  /**
-   * Mengelola pendaftaran user baru ke dalam ekosistem TerraVision
-   */
-  // 🟢 UBAH BAGIAN INI: Ganti parameter terakhir dari 'pass' menjadi 'password' agar sinkron dengan Frontend
   async register(name: string, email: string, password: string) {
-    // Validasi: Pastikan email belum pernah digunakan
+    // 1. Validasi: Pastikan email belum pernah digunakan
     const userExists = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -51,13 +47,12 @@ export class AuthService {
       throw new BadRequestException('Email ini sudah terdaftar di ekosistem TerraVision!');
     }
 
-    // Simpan data user baru ke database PostgreSQL
+    // 2. Simpan data user baru ke database PostgreSQL
     const newUser = await this.prisma.user.create({
       data: {
         nama: name, 
         email: email, 
-        password: password, // 🟢 SINKRON: Menggunakan variabel 'password' yang baru
-        // Kita tidak perlu menulis role: 'USER' karena prisma secara otomatis mengisinya dengan 'PETANI'
+        password: password, // 🟢 SEKARANG AMAN: Mengambil nilai dari parameter 'password' di atas
       },
     });
 

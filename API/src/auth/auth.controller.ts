@@ -8,13 +8,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async signIn(@Body() signInDto: any) { 
-    return await this.authService.login(signInDto.email, signInDto.password);
+    const password = signInDto.password || signInDto.pass;
+    return await this.authService.login(signInDto.email, password);
   }
 
-  // 👇 1. TAMBAHKAN BLOK REGISTRASI INI DI BAWAH LOGIN
   @Post('register')
   async signUp(@Body() signUpDto: any) { 
-    // Mengirim data nama, email, dan password ke auth.service
-    return await this.authService.register(signUpDto.name, signUpDto.email, signUpDto.password);
+    // 🟢 ANTISIPASI: Ambil data nama dan password apa pun variasi nama properti dari Frontend
+    const namaUser = signUpDto.name || signUpDto.nama;
+    const passwordUser = signUpDto.password || signUpDto.pass;
+
+    // Kirim data yang sudah pasti aman ke auth.service
+    return await this.authService.register(namaUser, signUpDto.email, passwordUser);
   }
 }
