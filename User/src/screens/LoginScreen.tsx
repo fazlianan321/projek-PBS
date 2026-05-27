@@ -58,39 +58,48 @@ export default function LoginScreen({ navigation, onNavigateToRegister }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-  <Text style={styles.title}>TerraVision</Text> {/* Perubahan nama aplikasi menjadi TerraVision */}
-  <Text style={styles.subtitle}>Monitoring Lahan Pertanian Cerdas</Text>
-</View>
+      <View style={styles.card}>
+        <View style={styles.header}>
+          <Text style={styles.logoIcon}>🌍</Text>
+          <Text style={styles.title}>TerraVision</Text>
+          <Text style={styles.subtitle}>Monitoring Lahan Pertanian Cerdas</Text>
+        </View>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Masukkan email Anda" 
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none" // Mencegah huruf pertama jadi kapital otomatis
-        />
+        <View style={styles.form}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput 
+            style={styles.input} 
+            placeholder="Masukkan email Anda" 
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+          />
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Masukkan password" 
-          secureTextEntry={true}
-          value={password}
-          onChangeText={setPassword}
-        />
-        
-        {/* Tampilkan animasi loading jika sedang memproses, jika tidak tampilkan tombol */}
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#2e7d32" style={{ marginTop: 10 }} />
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>MASUK</Text>
-          </TouchableOpacity>
-        )}
+          <Text style={styles.label}>Password</Text>
+          <TextInput 
+            style={styles.input} 
+            placeholder="Masukkan password" 
+            secureTextEntry={true}
+            value={password}
+            onChangeText={setPassword}
+          />
+          
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#1b4d3e" style={{ marginTop: 10 }} />
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>MASUK</Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Belum bergabung? </Text>
+            <TouchableOpacity onPress={onNavigateToRegister}>
+              <Text style={styles.linkText}>Daftar Akun Baru</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </View>
   );
