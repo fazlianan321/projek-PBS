@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityInd
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../config/api'; // Pastikan file ini sudah ada dengan IP laptopmu!
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation, onNavigateToRegister }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
