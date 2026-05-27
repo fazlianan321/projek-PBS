@@ -49,3 +49,21 @@ export class AuthService {
     if (userExists) {
       throw new BadRequestException('Email ini sudah terdaftar di ekosistem TerraVision!');
     }
+
+    // Simpan data user baru dengan role default ke database
+    const newUser = await this.prisma.user.create({
+      data: {
+        name, // Jika di skema prisma namamu 'name' atau 'nama', sesuaikan di sini
+        email,
+        password: pass,
+        role: 'USER', // Default role untuk pendaftaran baru
+      },
+    });
+
+    return {
+      statusCode: 201,
+      message: 'Akun TerraVision Anda berhasil dibuat! Silakan masuk.',
+      userId: newUser.id,
+    };
+  } // <-- Akhir fungsi register
+} // <-- Akhir dari class AuthService
