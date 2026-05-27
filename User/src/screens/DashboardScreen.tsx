@@ -28,3 +28,5 @@ const styles = StyleSheet.create({
   </TouchableOpacity>
 </View>
 ``` *(Gunakan styles headerBar dari desain full sebelumnya)*
+const [metrics] = useState({ soilMoisture: '68%', temperature: '28.5°C', humidity: '75%', vegetationHealth: 'Optimal' });
+// ... lalu masukkan baris <View style={styles.gridContainer}> berisi 4 buah kartu sensor ...
