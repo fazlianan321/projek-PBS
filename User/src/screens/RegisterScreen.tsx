@@ -69,3 +69,55 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
               <Text style={styles.formActionText}>Daftar Akun Baru</Text>
               <Text style={styles.formSecondaryText}>Lengkapi data diri Anda untuk bergabung ke dalam ekosistem pertanian cerdas.</Text>
             </View>
+            <View style={styles.formGroup}>
+              <Text style={styles.premiumLabel}>NAMA LENGKAP</Text>
+              <TextInput 
+                style={styles.premiumInput} 
+                placeholder="Masukkan nama lengkap Anda" 
+                placeholderTextColor="#94a3b8"
+                value={name}
+                onChangeText={setName}
+              />
+
+              <Text style={styles.premiumLabel}>ALAMAT EMAIL</Text>
+              <TextInput 
+                style={styles.premiumInput} 
+                placeholder="nama@domain.com" 
+                placeholderTextColor="#94a3b8"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+
+              <Text style={styles.premiumLabel}>KATA SANDI</Text>
+              <TextInput 
+                style={styles.premiumInput} 
+                placeholder="Buat password minimal 6 karakter" 
+                placeholderTextColor="#94a3b8"
+                secureTextEntry={true}
+                value={password}
+                onChangeText={setPassword}
+              />
+              
+              {isLoading ? (
+                <ActivityIndicator size="large" color="#047857" style={{ marginTop: 15 }} />
+              ) : (
+                <TouchableOpacity style={styles.premiumButton} onPress={handleRegister}>
+                  <Text style={styles.premiumButtonText}>DAFTAR SEKARANG</Text>
+                </TouchableOpacity>
+              )}
+
+              <View style={styles.premiumFooter}>
+                <Text style={styles.premiumFooterText}>Sudah memiliki akun? </Text>
+                <TouchableOpacity onPress={onNavigateToLogin}>
+                  <Text style={styles.premiumLinkText}>Masuk di sini</Text>
+                </TouchableOpacity>
+              </View>
+            </View> {/* Akhir formGroup */}
+          </View> {/* Akhir innerCardWeb */}
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
