@@ -108,73 +108,85 @@ export default function LoginScreen({ navigation, onNavigateToRegister }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f7f5', // Warna latar belakang abu kehijauan yang bersih
+    backgroundColor: '#f4f7f5', 
     justifyContent: 'center',
-    alignItems: 'center', // Membuat objek card berada pas di tengah layar
+    alignItems: 'center',
     padding: 20,
   },
   card: {
     backgroundColor: '#fff',
     width: '100%',
-    maxWidth: 400, // Membatasi lebar kotak di web agar setara ukuran HP asli
+    maxWidth: 400,
     padding: 25,
     borderRadius: 20,
-    shadowColor: '#000', // Efek bayangan halus di browser / iOS
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5, // Efek bayangan di perangkat Android
+    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Efek bayangan mewah di browser web
+    elevation: 5, // Efek bayangan untuk HP Android
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 25,
+  },
+  logoIcon: {
+    fontSize: 40,
+    marginBottom: 5,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2e7d32', // Warna hijau gelap
+    color: '#1b4d3e', // Warna hijau botol tua premium
+    letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 13,
+    color: '#777',
     marginTop: 5,
+    textAlign: 'center',
   },
   form: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 15,
-    elevation: 3, // Memberikan efek bayangan di Android
-    shadowColor: '#000', // Efek bayangan di iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    width: '100%',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    color: '#2c3e50',
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: '#e1e8e2',
+    borderRadius: 10,
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginBottom: 20,
+    paddingVertical: 12,
+    marginBottom: 18,
     fontSize: 14,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#f9fbf9',
+    color: '#333',
   },
   button: {
-    backgroundColor: '#2e7d32',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#1b4d3e',
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 5,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  footerText: {
+    color: '#777',
+    fontSize: 13,
+  },
+  linkText: {
+    color: '#1b4d3e',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
 });
