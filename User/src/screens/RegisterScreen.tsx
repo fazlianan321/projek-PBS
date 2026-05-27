@@ -86,3 +86,92 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f4f7f5', // Latar belakang abu kehijauan bersih yang mewah
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  card: {
+    backgroundColor: '#fff',
+    width: '100%',
+    maxWidth: 400, // Menjaga rasio layout menyerupai layar smartphone di web
+    padding: 25,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  logoIcon: {
+    fontSize: 40,
+    marginBottom: 5,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#1b4d3e', // Hijau botol tua khas TerraVision
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  form: {
+    width: '100%',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e1e8e2',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginBottom: 18,
+    fontSize: 14,
+    backgroundColor: '#f9fbf9',
+    color: '#333',
+  },
+  button: {
+    backgroundColor: '#1b4d3e',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  footerText: {
+    color: '#777',
+    fontSize: 13,
+  },
+  linkText: {
+    color: '#1b4d3e',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+});
