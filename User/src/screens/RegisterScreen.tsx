@@ -121,3 +121,148 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    width: '100%',
+  },
+  leftBanner: {
+    width: '55%',
+    backgroundColor: '#064e3b', 
+    justifyContent: 'center',
+    padding: 60,
+    position: 'relative',
+  },
+  overlayPattern: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: '#047857',
+    opacity: 0.12,
+  },
+  bannerContent: {
+    zIndex: 10,
+    maxWidth: 500,
+  },
+  badgeText: {
+    color: '#34d399',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    marginBottom: 16,
+  },
+  mainHeroTitle: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#ffffff',
+    lineHeight: 52,
+    letterSpacing: -1,
+  },
+  mainHeroSubtitle: {
+    fontSize: 15,
+    color: '#d1fae5',
+    marginTop: 18,
+    lineHeight: 24,
+    opacity: 0.85,
+  },
+  featureTagRow: {
+    flexDirection: 'row',
+    marginTop: 35,
+    gap: 10,
+  },
+  featureTag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    color: '#ffffff',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  rightFormPanel: {
+    backgroundColor: '#ffffff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  innerCardWeb: {
+    width: '100%',
+    maxWidth: 390,
+    paddingHorizontal: 30,
+  },
+  headerLeftAlign: {
+    marginBottom: 32,
+  },
+  brandTitleText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#064e3b',
+    marginBottom: 20,
+  },
+  formActionText: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  formSecondaryText: {
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  formGroup: {
+    width: '100%',
+  },
+  premiumLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  premiumInput: {
+    width: '100%',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    marginBottom: 20,
+    fontSize: 14,
+    color: '#0f172a',
+  },
+  premiumButton: {
+    backgroundColor: '#064e3b',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 6,
+    boxShadow: '0px 4px 14px rgba(6, 78, 59, 0.25)', 
+  },
+  premiumButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  premiumFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  premiumFooterText: {
+    color: '#64748b',
+    fontSize: 13,
+  },
+  premiumLinkText: {
+    color: '#047857',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+});
