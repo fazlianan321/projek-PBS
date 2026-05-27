@@ -21,14 +21,23 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
   useEffect(() => {
     const verifyActiveSession = async () => {
       try {
-        // Ekstraksi token dari penyimpanan aman enkripsi perangkat
-        const token = await SecureStore.getItemAsync('userToken');
+        let token = null;
+        
+        // Coba ambil dari SecureStore terlebih dahulu (Spesifik Perangkat HP)
+        try {
+          token = await SecureStore.getItemAsync('userToken');
+        } catch (e) {
+          // Fallback aman: ambil dari localStorage jika berjalan di Web Browser
+          token = localStorage.getItem('userToken');
+        }
+
         if (token) {
           console.log('Sesi aktif terverifikasi:', token.substring(0, 15) + '...');
         }
       } catch (error) {
         console.error('Gagal memvalidasi token sesi:', error);
       } finally {
+        // Matikan loading spinner agar dashboard utama langsung muncul tanpa stuck
         setLoadingSession(false);
       }
     };
@@ -247,12 +256,8 @@ const styles = StyleSheet.create({
     padding: 24,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    // Elegant hardware acceleration shadows
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
+    // Perbaikan Web Warning: Menggunakan boxShadow standar modern
+    boxShadow: '0px 4px 12px rgba(15, 23, 42, 0.04)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -302,11 +307,8 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     borderLeftWidth: 6,
     borderLeftColor: '#064e3b',
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
+    // Perbaikan Web Warning: Menggunakan boxShadow standar modern
+    boxShadow: '0px 4px 10px rgba(15, 23, 42, 0.03)',
   },
   alertHeaderRow: {
     flexDirection: 'row',
