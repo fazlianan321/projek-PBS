@@ -7,9 +7,14 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  // Gunakan tipe data yang jelas daripada Record<string, any>
   async signIn(@Body() signInDto: any) { 
-    // Kita panggil service login yang sudah kamu buat tadi
     return await this.authService.login(signInDto.email, signInDto.password);
+  }
+
+  // 👇 1. TAMBAHKAN BLOK REGISTRASI INI DI BAWAH LOGIN
+  @Post('register')
+  async signUp(@Body() signUpDto: any) { 
+    // Mengirim data nama, email, dan password ke auth.service
+    return await this.authService.register(signUpDto.name, signUpDto.email, signUpDto.password);
   }
 }
