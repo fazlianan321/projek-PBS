@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, useWindowDimensions } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../config/api'; 
 
-export default function LoginScreen({ navigation, onNavigateToRegister }: any) {
-  const [email, setEmail] = useState('');
+// 🟢 PERBAIKAN 1: Hapus 'route', ganti dengan 'initialEmail' agar pas dengan App.tsx
+export default function LoginScreen({ navigation, onNavigateToRegister, initialEmail }: any) {
+  
+  // 🟢 PERBAIKAN 2: Gunakan initialEmail sebagai nilai default
+  const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // 🟢 PERBAIKAN 3: Pastikan form langsung terisi jika initialEmail berubah
+  useEffect(() => {
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+  }, [initialEmail]);
 
   // Deteksi lebar layar untuk sistem UI responsif
   const { width } = useWindowDimensions();
@@ -133,7 +143,7 @@ const styles = StyleSheet.create({
   },
   leftBanner: {
     width: '55%',
-    backgroundColor: '#064e3b', // Hijau Botol Tua Premium khas Agrotech
+    backgroundColor: '#064e3b',
     justifyContent: 'center',
     padding: 60,
     position: 'relative',
@@ -149,7 +159,7 @@ const styles = StyleSheet.create({
     maxWidth: 500,
   },
   badgeText: {
-    color: '#34d399', // Emerald Soft
+    color: '#34d399',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
@@ -225,7 +235,7 @@ const styles = StyleSheet.create({
   },
   premiumInput: {
     width: '100%',
-    backgroundColor: '#f8fafc', // Efek abu pudar modern bersih
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e2e8f0',
     borderRadius: 12,
@@ -241,7 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 6,
-    boxShadow: '0px 4px 14px rgba(6, 78, 59, 0.25)', // Glow halus di browser web
+    boxShadow: '0px 4px 14px rgba(6, 78, 59, 0.25)', 
   },
   premiumButtonText: {
     color: '#ffffff',
