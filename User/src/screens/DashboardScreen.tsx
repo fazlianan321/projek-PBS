@@ -30,3 +30,7 @@ const styles = StyleSheet.create({
 ``` *(Gunakan styles headerBar dari desain full sebelumnya)*
 const [metrics] = useState({ soilMoisture: '68%', temperature: '28.5°C', humidity: '75%', vegetationHealth: 'Optimal' });
 // ... lalu masukkan baris <View style={styles.gridContainer}> berisi 4 buah kartu sensor ...
+<View style={styles.alertPanel}>
+  <Text style={styles.alertTitle}>⚡ Status Otomatisasi Node IoT</Text>
+  <Text style={styles.alertDescription}>Sistem Irigasi Otomatis sedang Nonaktif. Pompa air aktif jika kelembaban &lt; 50%.</Text>
+</View>
