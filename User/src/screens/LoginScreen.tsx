@@ -3,22 +3,17 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityInd
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../config/api'; 
 
-// 🟢 PERBAIKAN 1: Hapus 'route', ganti dengan 'initialEmail' agar pas dengan App.tsx
-export default function LoginScreen({ navigation, onNavigateToRegister, initialEmail }: any) {
-  
-  // 🟢 PERBAIKAN 2: Gunakan initialEmail sebagai nilai default
+export default function LoginScreen({ navigation, onNavigateToRegister, initialEmail, onLoginSuccess }: any) {
   const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🟢 PERBAIKAN 3: Pastikan form langsung terisi jika initialEmail berubah
   useEffect(() => {
     if (initialEmail) {
       setEmail(initialEmail);
     }
   }, [initialEmail]);
 
-  // Deteksi lebar layar untuk sistem UI responsif
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
@@ -46,10 +41,22 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
       if (response.ok) {
         const token = result.access_token;
         if (token) {
-          await SecureStore.setItemAsync('userToken', token);
+          // Fallback storage aman: LocalStorage untuk web browser, SecureStore untuk HP fisik
+          try {
+            await SecureStore.setItemAsync('userToken', token);
+          } catch (e) {
+            localStorage.setItem('userToken', token);
+            console.log('SecureStore dialihkan ke localStorage (Web Environment)');
+          }
         }
-        Alert.alert('Sukses', `Selamat datang kembali!`);
-        navigation.replace('Dashboard');
+        
+        // 🟢 PERBAIKAN UTAMA: Langsung tembak callback untuk ganti halaman root ke DASHBOARD
+        if (typeof onLoginSuccess === 'function') {
+          onLoginSuccess();
+        } else {
+          // Fallback cadangan jika properti fungsi mengalami kendala render
+          Alert.alert('Sukses', 'Login berhasil!');
+        }
       } else {
         Alert.alert('Login Gagal', result.message || 'Email atau password salah.');
       }
@@ -63,7 +70,7 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
 
   return (
     <View style={styles.mainContainer}>
-      {/* PANEL KIRI: Visual Branding Tanaman Cerdas (Hanya muncul di Laptop/Web lebar) */}
+      {/* PANEL KIRI: Visual Branding */}
       {isDesktop && (
         <View style={styles.leftBanner}>
           <View style={styles.overlayPattern} />
@@ -82,7 +89,7 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
         </View>
       )}
 
-      {/* PANEL KANAN: Form Akses Autentikasi Premium */}
+      {/* PANEL KANAN: Form Akses */}
       <View style={[styles.rightFormPanel, { width: isDesktop ? '45%' : '100%' }]}>
         <View style={styles.innerCardWeb}>
           <View style={styles.headerLeftAlign}>
