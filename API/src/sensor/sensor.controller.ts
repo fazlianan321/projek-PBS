@@ -15,16 +15,24 @@ export class SensorController {
     return this.sensorService.getLatestData(lahanId);
   }
 
-  // 🟢 PERBAIKAN BARU: Rute untuk mengubah status sakelar pompa air dari aplikasi HP
+  // 🟢 PERBAIKAN: Sekarang rute ini benar-benar menyimpan status pompa ke database via Service
   @Post('pump/toggle')
   async togglePump(@Body() data: { lahanId: string; statusPompa: boolean }) {
-    // Menampilkan log di terminal backend saat tombol di HP Fazli ditekan
     console.log(`[BACKEND IoT] Perintah Sakelar Diterima! Lahan: ${data.lahanId} | Pompa: ${data.statusPompa ? 'NYALA 🚰' : 'MATI 🔴'}`);
     
-    // Kembalikan respon sukses ke aplikasi React Native
+    // Menyimpan perubahan sakelar ke database. 
+    // Kita berikan suhu & kelembapan 0 karena ini trigger tombol, bukan sensor fisik.
+    // Gunakan casting 'as any' agar Prisma menerima properti statusPompa jika ada di skema Anda.
+    await this.sensorService.createData({
+      suhu: 0,
+      kelembapan: 0,
+      lahanId: data.lahanId,
+      ...({ statusPompa: data.statusPompa } as any)
+    });
+    
     return {
       success: true,
-      message: `Status pompa untuk lahan ${data.lahanId} berhasil diubah menjadi ${data.statusPompa ? 'Aktif' : 'Nonaktif'}`,
+      message: `Status pompa untuk lahan ${data.lahanId} berhasil diperbarui di database.`,
       statusTerakhir: data.statusPompa,
     };
   }
