@@ -2,12 +2,17 @@
 const LAHAN_ID = 'TRV-001'; 
 const API_URL = 'http://localhost:3000/sensor/input';
 
-console.log("🚀 Menginisialisasi Uji Coba Simulator IoT TerraVision...");
+console.log("🚀 Simulator Alat IoT TerraVision Mulai Berjalan...");
+console.log("Mengirim data dinamis ke database setiap 5 detik...\n");
 
-function kirimDataSensor() {
+function kirimDataSensorOtomatis() {
+  // Membuat simulasi fluktuasi angka cuaca/lahan alami
+  const suhuAcak = (27 + Math.random() * 4).toFixed(1); 
+  const kelembapanAcak = Math.floor(55 + Math.random() * 20); 
+
   const payload = {
-    suhu: 28.5,
-    kelembapan: 65,
+    suhu: parseFloat(suhuAcak),
+    kelembapan: kelembapanAcak,
     lahanId: LAHAN_ID
   };
 
@@ -17,10 +22,12 @@ function kirimDataSensor() {
     body: JSON.stringify(payload)
   })
   .then(res => {
-    if (res.ok) console.log("🟢 [Uji Coba] Berhasil mengirim satu data ke NestJS!");
-    else console.log(`🔴 Server merespon dengan status: ${res.status}`);
+    if (res.ok) {
+      console.log(`[${new Date().toLocaleTimeString()}] 🟢 Sukses -> Lahan: ${LAHAN_ID} | Suhu: ${suhuAcak}°C | Kelembapan: ${kelembapanAcak}%`);
+    }
   })
-  .catch(err => console.log("❌ Gagal koneksi. Pastikan server NestJS sudah menyala."));
+  .catch(err => console.log("❌ Server mati atau jaringan terputus."));
 }
 
-kirimDataSensor();
+// Menjalankan pengiriman otomatis berulang
+setInterval(kirimDataSensorOtomatis, 5000);
