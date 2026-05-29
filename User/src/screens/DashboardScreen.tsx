@@ -83,10 +83,39 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
   };
 
   // Handler Aksi Pompa Irigasi
-  const handleTogglePump = () => {
+  // 🟢 PERBAIKAN: Mengubah fungsi pompa manual agar terintegrasi dengan API NestJS secara asinkron
+  const handleTogglePump = async () => {
     const newState = !isPumpActive;
-    setIsPumpActive(newState);
-    Alert.alert("Perintah Terkirim", newState ? "Pompa irigasi berhasil diaktifkan via API." : "Pompa irigasi dinonaktifkan.");
+    const PUMP_API_URL = `http://${IP_LAPTOP}:3000/sensor/pump/toggle`;
+
+    try {
+      const response = await fetch(PUMP_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lahanId: LAHAN_ID,
+          statusPompa: newState
+        })
+      });
+
+      if (response.ok) {
+        setIsPumpActive(newState); // Lampu indikator di HP berubah jika server sukses merespon
+        Alert.alert(
+          "Perintah Terkirim", 
+          newState ? "Pompa irigasi berhasil diaktifkan via API." : "Pompa irigasi dinonaktifkan."
+        );
+      } else {
+        Alert.alert("Gagal Kontrol Pompa", "Server merespon, tetapi gagal memproses perintah.");
+      }
+    } catch (error) {
+      console.log("Error tombol irigasi:", error);
+      Alert.alert(
+        "Koneksi Putus", 
+        "Gagal mengirim perintah pompa. Pastikan Laptop (Server) dan HP berada di jaringan Wi-Fi yang sama!"
+      );
+    }
   };
 
   // Handler Simulasi Analisis Upload AI
