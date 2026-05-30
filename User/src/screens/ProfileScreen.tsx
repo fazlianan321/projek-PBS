@@ -17,3 +17,18 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     lahanName: 'Lahan Utama TRV-001',
     lokasi: 'Bandar Lampung, Indonesia'
   });
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#047857" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.mainContainer}>
+      {/* HEADER BAR */}
+      <View style={styles.headerBar}>
+        <Text style={styles.headerTitle}>Profil Akun</Text>
+      </View>
