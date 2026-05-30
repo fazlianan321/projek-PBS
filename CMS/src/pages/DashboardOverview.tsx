@@ -46,3 +46,32 @@ const weeklyTrendData = [
   { hari: 'Sabtu', kelembapanRata2: 60, suhuRata2: 28.0 },
   { hari: 'Minggu', kelembapanRata2: 64, suhuRata2: 27.8 },
 ];
+
+export default function DashboardOverview() {
+  const [activeTab, setActiveTab] = useState<'telemetri' | 'users'>('telemetri');
+
+  const [usersList, setUsersList] = useState<UserData[]>([
+    { id: 'USR-001', nama: 'Supardi ', email: 'supardi.lahan@gmail.com', role: 'Petani', statusVerifikasi: true, tanggalGabung: '12 Jan 2026' },
+    { id: 'USR-002', nama: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', statusVerifikasi: true, tanggalGabung: '05 Feb 2026' },
+    { id: 'USR-003', nama: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', statusVerifikasi: false, tanggalGabung: '28 Mei 2026' },
+  ]);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'Admin' | 'Petani' | 'Manajer Lahan'>('Petani');
+
+  const [stats, setStats] = useState<DashboardStats>({
+    totalPetani: 142,
+    petaniTerverifikasi: 128,
+    totalLahanAktif: 85,
+    nodeSensorOnline: 32,
+    nodeSensorOffline: 2,
+  });
+
+  const [sensorStreams, setSensorStreams] = useState<SensorDataStream[]>([
+    { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
+    { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
+    { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
+    { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
+  ]);
