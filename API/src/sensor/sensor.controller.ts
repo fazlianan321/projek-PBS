@@ -78,4 +78,37 @@ export class SensorController {
       statusTerakhir: data.statusPompa,
     };
   }
+
+  // 🟢 ENDPOINT BARU: Simulasi AI Vision Diagnosa Kesehatan Daun secara Kontekstual
+  @Post('ai/analyze-leaf')
+  async analyzeLeaf(@Body() data: { lahanId: string }) {
+    console.log(`[🤖 AI VISION] Memproses analisis foto daun untuk Lahan: ${data.lahanId}`);
+
+    // Ambil data kelembapan terakhir dari database untuk menghasilkan diagnosis yang realistis
+    const dataTerakhir = await this.sensorService.getLatestData(data.lahanId);
+    const kelembapanAktal = dataTerakhir?.kelembapan ?? 60;
+
+    let diagnosis = 'Tanaman Sehat & Subur (Kondisi Optimal)';
+    let saran = 'Pertahankan kelembapan tanah dan pola manajemen air saat ini.';
+
+    // Logika keputusan AI berbasis kondisi real-time lahan
+    if (kelembapanAktal > 75) {
+      diagnosis = 'Terindikasi Infeksi Jamur / Cercospora (Bercak Daun)';
+      saran = 'Kelembapan tanah terlalu tinggi. Batasi irigasi sementara waktu untuk menghentikan spora.';
+    } else if (kelembapanAktal < 50) {
+      diagnosis = 'Gejala Klorosis (Kekurangan Nutrisi / Dehidrasi)';
+      saran = 'Tanah terlalu kering. Berikan tambahan pupuk NPK dan optimalkan suplai irigasi.';
+    }
+
+    // Delay server 1.5 detik agar memberikan efek kalkulasi model AI sesungguhnya
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    return {
+      success: true,
+      lahanId: data.lahanId,
+      result: diagnosis,
+      suggestion: saran,
+      analyzedAt: new Date().toLocaleTimeString('id-ID') + ' WIB'
+    };
+  }
 }
