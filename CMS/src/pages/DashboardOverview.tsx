@@ -20,17 +20,17 @@ interface SensorDataStream {
   lastUpdated: string;
 }
 
-// FIX 1: Selaraskan Interface dengan database backend kamu
 interface UserData {
   id: string;
-  username: string; // Sebelumnya 'nama'
+  username: string; 
   email: string;
   role: 'Admin' | 'Petani' | 'Manajer Lahan';
-  status: 'Verified' | 'Unverified'; // Sebelumnya 'statusVerifikasi: boolean'
+  status: 'Verified' | 'Unverified'; 
   tanggalGabung: string;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// PERBAIKAN: Port disesuaikan langsung ke host utama NestJS (tanpa /api jika global prefix tidak diset)
+const API_BASE_URL = 'http://localhost:3000';
 
 const weeklyTrendData = [
   { hari: 'Senin', kelembapanRata2: 62, suhuRata2: 27.4 },
@@ -62,14 +62,14 @@ export default function DashboardOverview() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<'Admin' | 'Petani' | 'Manajer Lahan'>('Petani');
 
-  // FIX 2: Ambil array pembungkus dari properti ".data" respons backend
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
+      // PERBAIKAN: Route fetch disesuaikan dengan endpoint log NestJS (/sensor/latest/:lahanId)
       const [resUsers, resSensors] = await Promise.all([
         fetch(`${API_BASE_URL}/users`),
-        fetch(`${API_BASE_URL}/sensors`)
+        fetch(`${API_BASE_URL}/sensor/latest/1`) // Contoh mengambil data Lahan ID 1
       ]);
 
       if (!resUsers.ok || !resSensors.ok) throw new Error('Respon server backend bermasalah.');
@@ -77,22 +77,24 @@ export default function DashboardOverview() {
       const resUsersJson = await resUsers.json();
       const resSensorsJson = await resSensors.json();
 
-      // Menggunakan fallback ".data || resJson" jika backend mengembalikan object bungkus atau array langsung
       setUsersList(resUsersJson.data || resUsersJson); 
-      setSensorStreams(resSensorsJson.data || resSensorsJson);
+      
+      // PERBAIKAN: Jika NestJS merespon berupa objek tunggal, bungkus ke array agar .map() tidak error
+      const sensorData = resSensorsJson.data || resSensorsJson;
+      setSensorStreams(Array.isArray(sensorData) ? sensorData : [sensorData]);
+      
       setApiError(null);
     } catch (err: any) {
       console.warn('Backend offline, memuat data lokal sebagai fallback.');
-      setApiError('Koneksi database pusat offline. Menjalankan mode simulasi lokal.');
+      setApiError('Koneksi database pusat offline atau endpoint bermasalah. Menjalankan mode simulasi.');
       
-      // Data fallback lokal disesuaikan dengan skema baru agar tidak pecah saat offline
       setUsersList([
         { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified', tanggalGabung: '12 Jan 2026' },
         { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified', tanggalGabung: '05 Feb 2026' },
         { id: 'USR-003', username: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', status: 'Unverified', tanggalGabung: '28 Mei 2026' },
       ]);
       setSensorStreams([
-        { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
+        { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 72, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
         { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
         { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
         { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
@@ -106,11 +108,10 @@ export default function DashboardOverview() {
     loadDashboardData();
   }, []);
 
-  // FIX 3: Perbaikan filter statistik berdasarkan tipe data string 'Verified'
   useEffect(() => {
     const verifiedCount = usersList.filter(u => u.status === 'Verified').length;
-    const onlineSensors = sensorStreams.filter(s => s.status === 'ONLINE').length;
-    const offlineSensors = sensorStreams.filter(s => s.status === 'OFFLINE').length;
+    const onlineSensors = sensorStreams.filter(s => s && s.status === 'ONLINE').length;
+    const offlineSensors = sensorStreams.filter(s => s && s.status === 'OFFLINE').length;
 
     setStats({
       totalPetani: usersList.filter(u => u.role === 'Petani').length,
@@ -125,7 +126,7 @@ export default function DashboardOverview() {
     const interval = setInterval(() => {
       setSensorStreams((prevStreams) =>
         prevStreams.map((sensor) => {
-          if (sensor.status === 'OFFLINE') return sensor;
+          if (!sensor || sensor.status === 'OFFLINE') return sensor;
           return {
             ...sensor,
             kelembapanTanah: Math.max(30, Math.min(90, sensor.kelembapanTanah + (Math.random() > 0.5 ? 1 : -1))),
@@ -138,7 +139,6 @@ export default function DashboardOverview() {
     return () => clearInterval(interval);
   }, []);
 
-  // FIX 4: Payload tambah data disesuaikan ke 'username' dan 'status'
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
@@ -147,12 +147,12 @@ export default function DashboardOverview() {
       username: newUserName,
       email: newUserEmail,
       role: newUserRole,
-      status: 'Verified',
+      status: 'Verified' as const,
       tanggalGabung: 'Hari ini'
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users`, {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, { // Menyesuaikan route register NestJS kamu
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUserData)
@@ -163,7 +163,7 @@ export default function DashboardOverview() {
         throw new Error();
       }
     } catch {
-      setUsersList([...usersList, { ...newUserData, id: `USR-00${usersList.length + 1}` as any }]);
+      setUsersList([...usersList, { ...newUserData, id: `USR-00${usersList.length + 1}` } as UserData]);
     }
 
     setNewUserName('');
@@ -171,7 +171,6 @@ export default function DashboardOverview() {
     setShowAddForm(false);
   };
 
-  // FIX 5: Perubahan logika toggle status verifikasi string 'Verified' / 'Unverified'
   const toggleVerification = async (id: string) => {
     const targetUser = usersList.find(u => u.id === id);
     if (!targetUser) return;
@@ -339,7 +338,7 @@ export default function DashboardOverview() {
                 <tbody className="text-slate-700 text-sm divide-y divide-slate-50">
                   {loading ? (
                     renderTableSkeleton(7, 4)
-                  ) : sensorStreams.length === 0 ? (
+                  ) : sensorStreams.length === 0 || !sensorStreams[0] ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-slate-400">Tidak ada transmisi perangkat IoT aktif.</td>
                     </tr>
@@ -463,7 +462,6 @@ export default function DashboardOverview() {
                     <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-4 pl-2 font-mono font-bold text-slate-400">{user.id}</td>
                       <td className="py-4">
-                        {/* FIX 6: Render field user.username sesuai JSON API */}
                         <div className="font-bold text-slate-900">{user.username}</div>
                         <div className="text-slate-400 text-xs">{user.email}</div>
                       </td>
@@ -480,7 +478,6 @@ export default function DashboardOverview() {
                         <button 
                           type="button"
                           onClick={() => toggleVerification(user.id)}
-                          {/* FIX 7: Render styling & teks status string 'Verified' */}
                           className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full transition-all ${
                             user.status === 'Verified' 
                               ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
