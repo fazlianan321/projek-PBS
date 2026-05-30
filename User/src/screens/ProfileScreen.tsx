@@ -1,201 +1,67 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
 
-// Definisi type props yang harus diterima dari App.tsx
+// 🟢 [DIUBAH]: Menambahkan properti userEmail agar dinamis sesuai akun yang login
 interface ProfileProps {
+  userEmail: string; 
   onLogout: () => void;
-  onBackToDashboard: () => void; // 🟢 Menghilangkan alur buntu navigasi
+  onBackToDashboard: () => void; 
 }
 
-export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfileProps) {
+export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }: ProfileProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
   const [loading] = useState(false);
 
-  // 🟢 State Verifikasi Dinamis (Tidak langsung terverifikasi secara aneh)
+  // Status Verifikasi Dinamis
   const [isVerified, setIsVerified] = useState(false);
 
-  // State Data Profil Pengguna menggunakan Identitas Resmi Kampus
-  const [userData] = useState({
+  // 🟢 [DITAMBAHKAN]: State kontrol visibilitas formulir pop-up (Modal)
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // 🟢 [DITAMBAHKAN]: State penampung input formulir dari petani
+  const [inputPhone, setInputPhone] = useState('');
+  const [inputBirthDate, setInputBirthDate] = useState('');
+
+  // 🟢 [DIUBAH]: Mengosongkan data awal nomor, tanggal lahir, dan tanggal bergabung petani
+  const [userData, setUserData] = useState({
     name: 'Vivi & Fazli',
     role: 'Pemilik Lahan (Master Admin)',
-    email: 'vivi_restu_anggraini@teknokrat.ac.id', // 🟢 Menggunakan email Teknokrat yang valid
-    phone: '+62 812-3456-7890',
-    joinedSince: 'Mei 2026',
+    phone: '', 
+    birthDate: '', 
+    joinedSince: 'Belum Aktif ❌', 
     lahanName: 'Lahan Utama TRV-001',
     lokasi: 'Bandar Lampung, Indonesia'
   });
 
-  // 🟢 PERBAIKAN UTAMA: Fungsi verifikasi adaptif yang mendukung HP maupun Browser Web Laptop
+  // 🟢 [DIUBAH]: Fungsi dialihkan untuk membuka formulir pengisian jika belum verifikasi
   const handleRequestVerification = () => {
     if (isVerified) {
       if (Platform.OS === 'web') {
-        alert("Informasi Akun: Akun Anda sudah berstatus Terverifikasi.");
+        alert("Informasi Akun: Akun petani Anda sudah berstatus aktif dan terverifikasi.");
       } else {
-        Alert.alert("Informasi Akun", "Akun Anda sudah berstatus Terverifikasi.");
+        Alert.alert("Informasi Akun", "Akun petani Anda sudah berstatus aktif dan terverifikasi.");
+      }
+      return;
+    }
+    
+    // Buka formulir input modal jika belum verifikasi
+    setIsModalVisible(true);
+  };
+
+  // 🟢 [DITAMBAHKAN]: Fungsi eksekusi tombol "Verifikasi Sekarang" di dalam modal
+  const handleSummitVerification = () => {
+    if (!inputPhone.trim() || !inputBirthDate.trim()) {
+      if (Platform.OS === 'web') {
+        alert("Data Tidak Lengkap: Silakan isi Nomor WhatsApp dan Tanggal Lahir terlebih dahulu.");
+      } else {
+        Alert.alert("Data Tidak Lengkap", "Silakan isi Nomor WhatsApp dan Tanggal Lahir terlebih dahulu.");
       }
       return;
     }
 
-    // Jika diuji lewat Browser Web Laptop / Chrome
-    if (Platform.OS === 'web') {
-      const kofirmasiWeb = window.confirm("Apakah Anda ingin mengajukan verifikasi akun menggunakan email institusi Teknokrat?");
-      if (kofirmasiWeb) {
-        setIsVerified(true);
-        alert("Verifikasi Sukses 🎉\nSistem AI berhasil memverifikasi hak akses kepemilikan lahan Anda!");
-      }
-    } else {
-      // Jika diuji lewat HP asli atau Emulator Android/iOS
-      Alert.alert(
-        "Pengajuan Verifikasi",
-        "Apakah Anda ingin mengajukan verifikasi akun menggunakan email institusi Teknokrat?",
-        [
-          { text: "Batal", style: "cancel" },
-          { 
-            text: "Ajukan", 
-            onPress: () => {
-              setIsVerified(true);
-              Alert.alert("Verifikasi Sukses 🎉", "Sistem AI berhasil memverifikasi hak akses kepemilikan lahan Anda!");
-            } 
-          }
-        ]
-      );
-    }
-  };
+    // Ambil bulan dan tahun hari ini secara otomatis untuk tanggal bergabung
+    const today = new Date();
+    const formattedDate = today.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#047857" />
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.mainContainer}>
-      
-      {/* HEADER BAR HIJAU DENGAN TOMBOL NAVIGASI BULAT ELEGAN */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.elegantBackButton} onPress={onBackToDashboard} activeOpacity={0.6}>
-          <Text style={styles.backIconText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profil Akun</Text>
-      </View>
-
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always"
-      >
-        <View style={[styles.profileLayout, { flexDirection: isDesktop ? 'row' : 'column' }]}>
-          
-          {/* KARTU AVATAR UTAMA */}
-          <View style={[styles.avatarCard, { width: isDesktop ? '35%' : '100%' }]}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitials}>VF</Text>
-            </View>
-            <Text style={styles.userName}>{userData.name}</Text>
-            <Text style={styles.userRole}>{userData.role}</Text>
-            
-            {/* AREA BADGE VERIFIKASI DENGAN COAT LAYER LAYER AMAN */}
-            <View style={styles.badgeWrapper}>
-              <TouchableOpacity 
-                style={[styles.badgeContainer, isVerified ? styles.bgSuccess : styles.bgWarning]}
-                onPress={handleRequestVerification}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.verifiedBadge, isVerified ? styles.textSuccess : styles.textWarning]}>
-                  {isVerified ? '🛡️ Akun Terverifikasi' : '⚠️ Belum Verifikasi (Klik Sini)'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* DETAIL INFORMASI AKUN & LAHAN */}
-          <View style={[styles.infoContainer, { width: isDesktop ? '60%' : '100%' }]}>
-            
-            {/* GRUP 1: INFORMASI PRIBADI */}
-            <Text style={styles.sectionTitle}>Informasi Personal</Text>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📧 Email</Text>
-                <Text style={styles.infoValue}>{userData.email}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📞 No. Telepon</Text>
-                <Text style={styles.infoValue}>{userData.phone}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📅 Bergabung Sejak</Text>
-                <Text style={styles.infoValue}>{userData.joinedSince}</Text>
-              </View>
-            </View>
-
-            {/* GRUP 2: INTEGRASI SISTEM IOT */}
-            <Text style={styles.sectionTitle}>Sistem & Kepemilikan Lahan</Text>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>📍 Lokasi Geografis</Text>
-                <Text style={styles.infoValue}>{userData.lokasi}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>🌿 Kode Node Lahan</Text>
-                <Text style={styles.infoValue}>{userData.lahanName}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>🤖 Mode Penjaga</Text>
-                <Text style={[styles.infoValue, { color: '#047857', fontWeight: '800' }]}>AI Otomatis Aktif</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.8}>
-              <Text style={styles.logoutButtonText}>🔴 Keluar dari Aplikasi</Text>
-            </TouchableOpacity>
-
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  
-  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#064e3b', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderColor: '#047857', zIndex: 99 },
-  elegantBackButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  backIconText: { color: '#ffffff', fontWeight: 'bold', fontSize: 20, marginTop: -2 },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
-  
-  scrollContent: { padding: 30 },
-  profileLayout: { justifyContent: 'space-between', gap: 24 },
-  
-  avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', zIndex: 10, elevation: 3 },
-  avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#34d399' },
-  avatarInitials: { fontSize: 36, fontWeight: '800', color: '#065f46' },
-  userName: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
-  userRole: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 4, textAlign: 'center' },
-  
-  badgeWrapper: { width: '100%', alignItems: 'center', marginTop: 16, zIndex: 50, elevation: 5 }, 
-  badgeContainer: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 30, borderWidth: 1 },
-  bgSuccess: { backgroundColor: '#d1fae5', borderColor: '#34d399' },
-  bgWarning: { backgroundColor: '#ffedd5', borderColor: '#fed7aa' },
-  verifiedBadge: { fontSize: 12, fontWeight: '700' },
-  textSuccess: { color: '#065f46' },
-  textWarning: { color: '#c2410c' },
-
-  infoContainer: { gap: 12, zIndex: 1 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#475569', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
-  infoCard: { backgroundColor: '#ffffff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 20, borderWidth: 1, borderColor: '#e2e8f0' },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, alignItems: 'center' },
-  infoLabel: { fontSize: 14, fontWeight: '600', color: '#64748b' },
-  infoValue: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
-  divider: { height: 1, backgroundColor: '#f1f5f9' },
-  logoutButton: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
-  logoutButtonText: { color: '#b91c1c', fontWeight: '800', fontSize: 14 }
-});
+    
