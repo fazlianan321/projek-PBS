@@ -88,3 +88,39 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                 <Text style={[styles.infoValue, { color: '#047857', fontWeight: '800' }]}>AI Otomatis Aktif</Text>
               </View>
             </View>
+
+            <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.8}>
+              <Text style={styles.logoutButtonText}>🔴 Keluar dari Aplikasi</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
+  headerBar: { backgroundColor: '#064e3b', paddingHorizontal: 30, paddingVertical: 20, borderBottomWidth: 1, borderColor: '#047857' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
+  scrollContent: { padding: 30 },
+  profileLayout: { justifyContent: 'space-between', gap: 24 },
+  avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 15 },
+  avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#34d399' },
+  avatarInitials: { fontSize: 36, fontWeight: '800', color: '#065f46' },
+  userName: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
+  userRole: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 4, textAlign: 'center' },
+  badgeContainer: { marginTop: 16, backgroundColor: '#f1f5f9', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 30 },
+  verifiedBadge: { fontSize: 12, fontWeight: '700', color: '#475569' },
+  infoContainer: { gap: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#475569', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
+  infoCard: { backgroundColor: '#ffffff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 20, borderWidth: 1, borderColor: '#e2e8f0' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, alignItems: 'center' },
+  infoLabel: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  infoValue: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
+  divider: { height: 1, backgroundColor: '#f1f5f9' },
+  logoutButton: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  logoutButtonText: { color: '#b91c1c', fontWeight: '800', fontSize: 14 }
+});
