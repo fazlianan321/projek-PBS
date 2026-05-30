@@ -121,15 +121,41 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
     }
   };
 
-  // Handler Simulasi Analisis Upload AI
-  const handleUploadPhoto = () => {
+  // 🟢 PERBAIKAN: Mengirim request analisis foto asli ke server NestJS (Bukan Mocking Lagi)
+  const handleUploadPhoto = async () => {
     setIsUploading(true);
     setAnalysisResult(null);
-    setTimeout(() => {
+
+    const AI_API_URL = `http://${IP_LAPTOP}:3000/sensor/ai/analyze-leaf`;
+
+    try {
+      const response = await fetch(AI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lahanId: LAHAN_ID,
+        }),
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        // Gabungkan diagnosis utama dan saran tindakan dari AI server ke dalam UI
+        setAnalysisResult(`${json.result}\n💡 Saran: ${json.suggestion}`);
+        Alert.alert("Analisis Selesai", "AI Vision berhasil mendiagnosis kondisi kesehatan daun.");
+      } else {
+        Alert.alert("Gagal Analisis", "Server AI merespon tetapi gagal memproses diagnosis gambar.");
+      }
+    } catch (error) {
+      console.log("Error AI Vision Fetching:", error);
+      Alert.alert(
+        "Koneksi Putus", 
+        "Gagal terhubung ke Server AI. Pastikan Laptop dan HP berada di jaringan Wi-Fi yang sama!"
+      );
+    } finally {
       setIsUploading(false);
-      const results = ["Bercak Daun Terdeteksi (Ringan)", "Tanaman Sehat & Subur", "Kekurangan Nitrogen (Pupuk)"];
-      setAnalysisResult(results[Math.floor(Math.random() * results.length)]);
-    }, 2000);
+    }
   };
 
   if (loadingSession) {
