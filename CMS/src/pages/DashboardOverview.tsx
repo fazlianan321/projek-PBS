@@ -20,9 +20,6 @@ interface SensorDataStream {
   lastUpdated: string;
 }
 
-// ==========================================
-// ====== COMMIT 3: FIX MIGRATION CAMELCASE =
-// ==========================================
 const weeklyTrendData = [
   { hari: 'Senin', kelembapanRata2: 62, suhuRata2: 27.4 },
   { hari: 'Selasa', kelembapanRata2: 58, suhuRata2: 28.1 },
@@ -34,4 +31,15 @@ const weeklyTrendData = [
 ];
 
 export default function DashboardOverview() {
+  // ==========================================
+  // ====== COMMIT 7: STATS STATE & SEED =====
+  // ==========================================
+  const [stats] = useState<DashboardStats>({
+    totalPetani: 142,
+    petaniTerverifikasi: 128,
+    totalLahanAktif: 85,
+    nodeSensorOnline: 32,
+    nodeSensorOffline: 2,
+  });
+
   
