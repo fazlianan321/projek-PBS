@@ -20,12 +20,13 @@ interface SensorDataStream {
   lastUpdated: string;
 }
 
+// FIX 1: Selaraskan Interface dengan database backend kamu
 interface UserData {
   id: string;
-  nama: string;
+  username: string; // Sebelumnya 'nama'
   email: string;
   role: 'Admin' | 'Petani' | 'Manajer Lahan';
-  statusVerifikasi: boolean;
+  status: 'Verified' | 'Unverified'; // Sebelumnya 'statusVerifikasi: boolean'
   tanggalGabung: string;
 }
 
@@ -35,7 +36,7 @@ const weeklyTrendData = [
   { hari: 'Senin', kelembapanRata2: 62, suhuRata2: 27.4 },
   { hari: 'Selasa', kelembapanRata2: 58, suhuRata2: 28.1 },
   { hari: 'Rabu', kelembapanRata2: 65, suhuRata2: 26.9 },
-  { hari: 'Kamis', kelembapanRata2: 70, strokeWidth: 26.5 },
+  { hari: 'Kamis', kelembapanRata2: 70, suhuRata2: 26.5 },
   { hari: 'Jumat', kelembapanRata2: 52, suhuRata2: 29.3 },
   { hari: 'Sabtu', kelembapanRata2: 60, suhuRata2: 28.0 },
   { hari: 'Minggu', kelembapanRata2: 64, suhuRata2: 27.8 },
@@ -61,12 +62,11 @@ export default function DashboardOverview() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<'Admin' | 'Petani' | 'Manajer Lahan'>('Petani');
 
-  // 1. GET DATA REAL DARI BACKEND
+  // FIX 2: Ambil array pembungkus dari properti ".data" respons backend
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
-      // Ambil data dari endpoint /users dan /sensors secara parallel
       const [resUsers, resSensors] = await Promise.all([
         fetch(`${API_BASE_URL}/users`),
         fetch(`${API_BASE_URL}/sensors`)
@@ -74,21 +74,22 @@ export default function DashboardOverview() {
 
       if (!resUsers.ok || !resSensors.ok) throw new Error('Respon server backend bermasalah.');
 
-      const dataUsers = await resUsers.json();
-      const dataSensors = await resSensors.json();
+      const resUsersJson = await resUsers.json();
+      const resSensorsJson = await resSensors.json();
 
-      setUsersList(dataUsers);
-      setSensorStreams(dataSensors);
+      // Menggunakan fallback ".data || resJson" jika backend mengembalikan object bungkus atau array langsung
+      setUsersList(resUsersJson.data || resUsersJson); 
+      setSensorStreams(resSensorsJson.data || resSensorsJson);
       setApiError(null);
     } catch (err: any) {
       console.warn('Backend offline, memuat data lokal sebagai fallback.');
       setApiError('Koneksi database pusat offline. Menjalankan mode simulasi lokal.');
       
-      // Fallback data simulasi lokal jika API server belum dijalankan
+      // Data fallback lokal disesuaikan dengan skema baru agar tidak pecah saat offline
       setUsersList([
-        { id: 'USR-001', nama: 'Supardi ', email: 'supardi.lahan@gmail.com', role: 'Petani', statusVerifikasi: true, tanggalGabung: '12 Jan 2026' },
-        { id: 'USR-002', nama: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', statusVerifikasi: true, tanggalGabung: '05 Feb 2026' },
-        { id: 'USR-003', nama: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', statusVerifikasi: false, tanggalGabung: '28 Mei 2026' },
+        { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified', tanggalGabung: '12 Jan 2026' },
+        { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified', tanggalGabung: '05 Feb 2026' },
+        { id: 'USR-003', username: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', status: 'Unverified', tanggalGabung: '28 Mei 2026' },
       ]);
       setSensorStreams([
         { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
@@ -105,9 +106,9 @@ export default function DashboardOverview() {
     loadDashboardData();
   }, []);
 
-  // Sinkronisasi data statistik agregat secara dinamis berdasarkan data pengguna riil
+  // FIX 3: Perbaikan filter statistik berdasarkan tipe data string 'Verified'
   useEffect(() => {
-    const verifiedCount = usersList.filter(u => u.statusVerifikasi).length;
+    const verifiedCount = usersList.filter(u => u.status === 'Verified').length;
     const onlineSensors = sensorStreams.filter(s => s.status === 'ONLINE').length;
     const offlineSensors = sensorStreams.filter(s => s.status === 'OFFLINE').length;
 
@@ -120,7 +121,6 @@ export default function DashboardOverview() {
     });
   }, [usersList, sensorStreams]);
 
-  // Simulasi fluktuasi telemetri IoT (hanya untuk sensor berstatus ONLINE)
   useEffect(() => {
     const interval = setInterval(() => {
       setSensorStreams((prevStreams) =>
@@ -138,16 +138,16 @@ export default function DashboardOverview() {
     return () => clearInterval(interval);
   }, []);
 
-  // 2. HANDLER DATA REAL KE SERVER (POST, TOGGLE VERIFICATION, DELETE)
+  // FIX 4: Payload tambah data disesuaikan ke 'username' dan 'status'
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
 
     const newUserData = {
-      nama: newUserName,
+      username: newUserName,
       email: newUserEmail,
       role: newUserRole,
-      statusVerifikasi: true,
+      status: 'Verified',
       tanggalGabung: 'Hari ini'
     };
 
@@ -163,8 +163,7 @@ export default function DashboardOverview() {
         throw new Error();
       }
     } catch {
-      // Client-side fallback jika backend offline
-      setUsersList([...usersList, { ...newUserData, id: `USR-00${usersList.length + 1}` }]);
+      setUsersList([...usersList, { ...newUserData, id: `USR-00${usersList.length + 1}` as any }]);
     }
 
     setNewUserName('');
@@ -172,15 +171,18 @@ export default function DashboardOverview() {
     setShowAddForm(false);
   };
 
+  // FIX 5: Perubahan logika toggle status verifikasi string 'Verified' / 'Unverified'
   const toggleVerification = async (id: string) => {
     const targetUser = usersList.find(u => u.id === id);
     if (!targetUser) return;
+
+    const nextStatus = targetUser.status === 'Verified' ? 'Unverified' : 'Verified';
 
     try {
       const response = await fetch(`${API_BASE_URL}/users/${id}/verify`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ statusVerifikasi: !targetUser.statusVerifikasi })
+        body: JSON.stringify({ status: nextStatus })
       });
       if (response.ok) {
         loadDashboardData();
@@ -189,7 +191,7 @@ export default function DashboardOverview() {
       }
     } catch {
       setUsersList(usersList.map(user => 
-        user.id === id ? { ...user, statusVerifikasi: !user.statusVerifikasi } : user
+        user.id === id ? { ...user, status: nextStatus } : user
       ));
     }
   };
@@ -207,8 +209,19 @@ export default function DashboardOverview() {
     }
   };
 
+  const renderTableSkeleton = (colSpan: number, rowsCount = 3) => {
+    return Array.from({ length: rowsCount }).map((_, idx) => (
+      <tr key={`skeleton-${idx}`} className="animate-pulse">
+        <td colSpan={colSpan} className="py-4 px-2">
+          <div className="h-5 bg-slate-100 rounded w-full"></div>
+        </td>
+      </tr>
+    ));
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">TerraVision CMS Dashboard</h1>
@@ -236,11 +249,12 @@ export default function DashboardOverview() {
         </div>
       </div>
 
+      {/* Widget Grid Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-slate-400 text-xs font-semibold mb-1">Total Registrasi Petani</p>
-            <h3 className="text-2xl font-bold text-slate-800">{stats.totalPetani}</h3>
+            <h3 className="text-2xl font-bold text-slate-800">{loading ? '...' : stats.totalPetani}</h3>
             <p className="text-xs text-emerald-600 mt-1 font-medium">🛡️ {stats.petaniTerverifikasi} Terverifikasi</p>
           </div>
           <div className="bg-blue-50 p-3 rounded-xl text-blue-600"><Users size={22} /></div>
@@ -249,7 +263,7 @@ export default function DashboardOverview() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-slate-400 text-xs font-semibold mb-1">Total Lahan Terpeta</p>
-            <h3 className="text-2xl font-bold text-slate-800">{stats.totalLahanAktif}</h3>
+            <h3 className="text-2xl font-bold text-slate-800">{loading ? '...' : stats.totalLahanAktif}</h3>
             <p className="text-xs text-slate-500 mt-1">Titik koordinat aktif</p>
           </div>
           <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600"><Sprout size={22} /></div>
@@ -258,7 +272,7 @@ export default function DashboardOverview() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-slate-400 text-xs font-semibold mb-1">Node IoT Online</p>
-            <h3 className="text-2xl font-bold text-slate-800">{stats.nodeSensorOnline}</h3>
+            <h3 className="text-2xl font-bold text-slate-800">{loading ? '...' : stats.nodeSensorOnline}</h3>
             <p className="text-xs text-emerald-600 mt-1 font-medium">● Transmisi Stabil</p>
           </div>
           <div className="bg-green-50 p-3 rounded-xl text-green-600"><Cpu size={22} /></div>
@@ -267,13 +281,14 @@ export default function DashboardOverview() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-slate-400 text-xs font-semibold mb-1">Node Offline / Rusak</p>
-            <h3 className="text-2xl font-bold text-rose-600">{stats.nodeSensorOffline}</h3>
+            <h3 className="text-2xl font-bold text-rose-600">{loading ? '...' : stats.nodeSensorOffline}</h3>
             <p className="text-xs text-rose-500 mt-1 font-medium">⚠️ Butuh Pengecekan</p>
           </div>
           <div className="bg-rose-50 p-3 rounded-xl text-rose-600"><AlertTriangle size={22} /></div>
         </div>
       </div>
 
+      {/* Tab Content 1: Telemetri */}
       {activeTab === 'telemetri' && (
         <>
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
@@ -322,39 +337,47 @@ export default function DashboardOverview() {
                   </tr>
                 </thead>
                 <tbody className="text-slate-700 text-sm divide-y divide-slate-50">
-                  {sensorStreams.map((sensor) => (
-                    <tr key={sensor.nodeId} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 pl-2 font-bold text-slate-900">{sensor.nodeId}</td>
-                      <td className="py-4 text-slate-500 text-xs">{sensor.lokasi}</td>
-                      <td className="py-4">
-                        {sensor.status === 'ONLINE' ? (
-                          <span className={`font-semibold ${sensor.kelembapanTanah < 50 ? 'text-amber-600' : 'text-blue-600'}`}>
-                            {sensor.kelembapanTanah}%
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td className="py-4">
-                        {sensor.status === 'ONLINE' ? (
-                          <span className="font-semibold text-orange-600">{sensor.suhuUdara}°C</span>
-                        ) : '—'}
-                      </td>
-                      <td className="py-4">
-                        {sensor.status === 'ONLINE' ? (
-                          <span className={`font-semibold ${sensor.phTanah < 6.0 ? 'text-rose-600' : 'text-emerald-700'}`}>
-                            {sensor.phTanah} pH
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td className="py-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          sensor.status === 'ONLINE' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {sensor.status === 'ONLINE' ? '● Online' : '○ Offline'}
-                        </span>
-                      </td>
-                      <td className="py-4 text-right pr-2 text-xs text-slate-400">{sensor.lastUpdated}</td>
+                  {loading ? (
+                    renderTableSkeleton(7, 4)
+                  ) : sensorStreams.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">Tidak ada transmisi perangkat IoT aktif.</td>
                     </tr>
-                  ))}
+                  ) : (
+                    sensorStreams.map((sensor) => (
+                      <tr key={sensor.nodeId} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 pl-2 font-bold text-slate-900">{sensor.nodeId}</td>
+                        <td className="py-4 text-slate-500 text-xs">{sensor.lokasi}</td>
+                        <td className="py-4">
+                          {sensor.status === 'ONLINE' ? (
+                            <span className={`font-semibold ${sensor.kelembapanTanah < 50 ? 'text-amber-600' : 'text-blue-600'}`}>
+                              {sensor.kelembapanTanah}%
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="py-4">
+                          {sensor.status === 'ONLINE' ? (
+                            <span className="font-semibold text-orange-600">{sensor.suhuUdara}°C</span>
+                          ) : '—'}
+                        </td>
+                        <td className="py-4">
+                          {sensor.status === 'ONLINE' ? (
+                            <span className={`font-semibold ${sensor.phTanah < 6.0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                              {sensor.phTanah} pH
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="py-4">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                            sensor.status === 'ONLINE' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            {sensor.status === 'ONLINE' ? '● Online' : '○ Offline'}
+                          </span>
+                        </td>
+                        <td className="py-4 text-right pr-2 text-xs text-slate-400">{sensor.lastUpdated}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -362,6 +385,7 @@ export default function DashboardOverview() {
         </>
       )}
 
+      {/* Tab Content 2: Users Management */}
       {activeTab === 'users' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
@@ -428,57 +452,67 @@ export default function DashboardOverview() {
                 </tr>
               </thead>
               <tbody className="text-slate-700 text-sm divide-y divide-slate-50">
-                {usersList.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-4 pl-2 font-mono font-bold text-slate-400">{user.id}</td>
-                    <td className="py-4">
-                      <div className="font-bold text-slate-900">{user.nama}</div>
-                      <div className="text-slate-400 text-xs">{user.email}</div>
-                    </td>
-                    <td className="py-4">
-                      <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
-                        user.role === 'Admin' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
-                        user.role === 'Manajer Lahan' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                        'bg-amber-50 text-amber-700 border border-amber-100'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <button 
-                        type="button"
-                        onClick={() => toggleVerification(user.id)}
-                        className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full transition-all ${
-                          user.statusVerifikasi 
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
-                            : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
-                        }`}
-                        title="Klik untuk mengubah status verifikasi"
-                      >
-                        {user.statusVerifikasi ? '🛡️ Terverifikasi' : '❌ Belum Verifikasi'}
-                      </button>
-                    </td>
-                    <td className="py-4 text-xs text-slate-500">{user.tanggalGabung}</td>
-                    <td className="py-4 text-center pr-2">
-                      <div className="flex justify-center items-center gap-2">
-                        <button 
-                          onClick={() => toggleVerification(user.id)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-all"
-                          title="Ubah Status Verifikasi"
-                        >
-                          <Edit2 size={15} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all"
-                          title="Hapus Pengguna"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+                {loading ? (
+                  renderTableSkeleton(6, 3)
+                ) : usersList.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-400">Tidak ada data pengguna ditemukan.</td>
                   </tr>
-                ))}
+                ) : (
+                  usersList.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-4 pl-2 font-mono font-bold text-slate-400">{user.id}</td>
+                      <td className="py-4">
+                        {/* FIX 6: Render field user.username sesuai JSON API */}
+                        <div className="font-bold text-slate-900">{user.username}</div>
+                        <div className="text-slate-400 text-xs">{user.email}</div>
+                      </td>
+                      <td className="py-4">
+                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                          user.role === 'Admin' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                          user.role === 'Manajer Lahan' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                          'bg-amber-50 text-amber-700 border border-amber-100'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <button 
+                          type="button"
+                          onClick={() => toggleVerification(user.id)}
+                          {/* FIX 7: Render styling & teks status string 'Verified' */}
+                          className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full transition-all ${
+                            user.status === 'Verified' 
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+                              : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                          }`}
+                          title="Klik untuk mengubah status verifikasi"
+                        >
+                          {user.status === 'Verified' ? '🛡️ Terverifikasi' : '❌ Belum Verifikasi'}
+                        </button>
+                      </td>
+                      <td className="py-4 text-xs text-slate-500">{user.tanggalGabung}</td>
+                      <td className="py-4 text-center pr-2">
+                        <div className="flex justify-center items-center gap-2">
+                          <button 
+                            onClick={() => toggleVerification(user.id)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition-all"
+                            title="Ubah Status Verifikasi"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all"
+                            title="Hapus Pengguna"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
