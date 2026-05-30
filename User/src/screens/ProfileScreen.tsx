@@ -242,3 +242,55 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
   );
 }
 
+const styles = StyleSheet.create({
+  mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
+  
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#064e3b', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderColor: '#047857', zIndex: 99 },
+  elegantBackButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  backIconText: { color: '#ffffff', fontWeight: 'bold', fontSize: 20, marginTop: -2 },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
+  
+  scrollContent: { padding: 30 },
+  profileLayout: { justifyContent: 'space-between', gap: 24 },
+  
+  avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', zIndex: 10, elevation: 3 },
+  avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#34d399' },
+  avatarInitials: { fontSize: 36, fontWeight: '800', color: '#065f46' },
+  userName: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
+  userRole: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 4, textAlign: 'center' },
+  
+  badgeWrapper: { width: '100%', alignItems: 'center', marginTop: 16, zIndex: 50, elevation: 5 }, 
+  badgeContainer: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 30, borderWidth: 1 },
+  bgSuccess: { backgroundColor: '#d1fae5', borderColor: '#34d399' },
+  bgWarning: { backgroundColor: '#ffedd5', borderColor: '#fed7aa' },
+  verifiedBadge: { fontSize: 12, fontWeight: '700' },
+  textSuccess: { color: '#065f46' },
+  textWarning: { color: '#c2410c' },
+
+  infoContainer: { gap: 12, zIndex: 1 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#475569', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
+  infoCard: { backgroundColor: '#ffffff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 20, borderWidth: 1, borderColor: '#e2e8f0' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, alignItems: 'center' },
+  infoLabel: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  infoValue: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
+  
+  // 🟢 [DITAMBAHKAN]: Gaya teks penanda data belum diisi (berwarna merah redup)
+  textMuted: { color: '#ef4444', fontWeight: '600', fontSize: 13 },
+  divider: { height: 1, backgroundColor: '#f1f5f9' },
+  logoutButton: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  logoutButtonText: { color: '#b91c1c', fontWeight: '800', fontSize: 14 },
+
+  // 🟢 [DITAMBAHKAN]: Rentetan gaya arsitektur untuk penempatan Modal Formulir Pop-up
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContainer: { width: '100%', maxWidth: 450, backgroundColor: '#ffffff', borderRadius: 24, padding: 26 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 6 },
+  modalSubtitle: { fontSize: 13, color: '#64748b', lineHeight: 18, marginBottom: 20 },
+  inputLabel: { fontSize: 13, fontWeight: '700', color: '#334155', marginBottom: 6, marginTop: 12 },
+  textInput: { width: '100%', backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#0f172a' },
+  modalActionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 24 },
+  cancelModalButton: { paddingVertical: 12, paddingHorizontal: 18, borderRadius: 10, backgroundColor: '#f1f5f9' },
+  cancelModalText: { color: '#475569', fontWeight: '700', fontSize: 14 },
+  submitModalButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10, backgroundColor: '#047857' },
+  submitModalText: { color: '#ffffff', fontWeight: '700', fontSize: 14 }
+});
