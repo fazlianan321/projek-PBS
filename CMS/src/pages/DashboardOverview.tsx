@@ -93,3 +93,12 @@ export default function DashboardOverview() {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const verifiedCount = usersList.filter(u => u.statusVerifikasi).length;
+    setStats(prev => ({
+      ...prev,
+      totalPetani: 139 + usersList.length,
+      petaniTerverifikasi: 126 + verifiedCount
+    }));
+  }, [usersList]);
