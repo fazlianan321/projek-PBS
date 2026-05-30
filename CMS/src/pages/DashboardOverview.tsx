@@ -36,3 +36,13 @@ interface UserData {
   statusVerifikasi: boolean;
   tanggalGabung: string;
 }
+
+const weeklyTrendData = [
+  { hari: 'Senin', kelembapanRata2: 62, suhuRata2: 27.4 },
+  { hari: 'Selasa', kelembapanRata2: 58, suhuRata2: 28.1 },
+  { hari: 'Rabu', kelembapanRata2: 65, suhuRata2: 26.9 },
+  { hari: 'Kamis', kelembapanRata2: 70, suhuRata2: 26.5 },
+  { hari: 'Jumat', kelembapanRata2: 52, suhuRata2: 29.3 },
+  { hari: 'Sabtu', kelembapanRata2: 60, suhuRata2: 28.0 },
+  { hari: 'Minggu', kelembapanRata2: 64, suhuRata2: 27.8 },
+];
