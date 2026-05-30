@@ -102,3 +102,35 @@ export default function DashboardOverview() {
       petaniTerverifikasi: 126 + verifiedCount
     }));
   }, [usersList]);
+
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail) return;
+
+    const newUser: UserData = {
+      id: `USR-00${usersList.length + 1}`,
+      nama: newUserName,
+      email: newUserEmail,
+      role: newUserRole,
+      statusVerifikasi: true,
+      tanggalGabung: 'Hari ini'
+    };
+
+    setUsersList([...usersList, newUser]);
+    setNewUserName('');
+    setNewUserEmail('');
+    setShowAddForm(false);
+  };
+
+  const handleDeleteUser = (id: string) => {
+    setUsersList(usersList.filter(user => user.id !== id));
+  };
+
+  const toggleVerification = (id: string) => {
+    setUsersList(usersList.map(user => 
+      user.id === id ? { ...user, statusVerifikasi: !user.statusVerifikasi } : user
+    ));
+  };
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto"></div>
