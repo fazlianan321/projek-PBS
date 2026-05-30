@@ -1,15 +1,7 @@
-Siap! Ini cara cerdas biar kamu tidak perlu kerja dua kali. Saya akan berikan kode utuh yang sudah ditandai batas-batas commit-nya lewat komentar (// ====== COMMIT X ======) langsung di dalam baris kodenya.
-
-Dengan cara ini, kamu tinggal copas seluruh kode di bawah ini sekali saja ke dalam proyek VS Code kamu. Ketika nanti kamu mau melakukan git commit, kamu tinggal melihat tanda komentar tersebut sebagai panduan pesannya tanpa perlu memisah-misah file lagi.
-
-Karena kamu minta ditandai sampai Commit 10, mari kita sesuaikan penomoran riwayatnya agar runtut dan estetik di log Git kamu:
-
-TypeScript
 import React, { useState, useEffect } from 'react';
-import { Users, Sprout, Cpu, AlertTriangle, Activity, UserPlus, Trash2, Edit2, ShieldAlert } from 'lucide-react';
+import { Users, Sprout, Cpu, AlertTriangle, Activity, UserPlus, Trash2, Edit2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
-// ====== COMMIT 1: MODELING INTERFACES & DATATYPES ======
 interface DashboardStats {
   totalPetani: number;
   petaniTerverifikasi: number;
@@ -133,8 +125,8 @@ export default function DashboardOverview() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto"></div>
-    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">TerraVision CMS Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Sistem Manajemen Informasi Terintegrasi Lahan Pertanian Cerdas</p>
@@ -156,7 +148,6 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* ====== COMMIT 8: VIEW LAYOUT - STATISTICAL HERO METRIC CARDS ====== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
@@ -194,6 +185,7 @@ export default function DashboardOverview() {
           <div className="bg-rose-50 p-3 rounded-xl text-rose-600"><AlertTriangle size={22} /></div>
         </div>
       </div>
+
       {activeTab === 'telemetri' && (
         <>
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
@@ -281,6 +273,7 @@ export default function DashboardOverview() {
           </div>
         </>
       )}
+
       {activeTab === 'users' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
