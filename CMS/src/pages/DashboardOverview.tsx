@@ -134,3 +134,63 @@ export default function DashboardOverview() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto"></div>
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">TerraVision CMS Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Sistem Manajemen Informasi Terintegrasi Lahan Pertanian Cerdas</p>
+        </div>
+        
+        <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200/60 self-start md:self-auto">
+          <button 
+            onClick={() => setActiveTab('telemetri')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'telemetri' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            📊 Monitoring Telemetri
+          </button>
+          <button 
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'users' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            👥 Manajemen Pengguna
+          </button>
+        </div>
+      </div>
+
+      {/* ====== COMMIT 8: VIEW LAYOUT - STATISTICAL HERO METRIC CARDS ====== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-400 text-xs font-semibold mb-1">Total Registrasi Petani</p>
+            <h3 className="text-2xl font-bold text-slate-800">{stats.totalPetani}</h3>
+            <p className="text-xs text-emerald-600 mt-1 font-medium">🛡️ {stats.petaniTerverifikasi} Terverifikasi</p>
+          </div>
+          <div className="bg-blue-50 p-3 rounded-xl text-blue-600"><Users size={22} /></div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-400 text-xs font-semibold mb-1">Total Lahan Terpeta</p>
+            <h3 className="text-2xl font-bold text-slate-800">{stats.totalLahanAktif}</h3>
+            <p className="text-xs text-slate-500 mt-1">Titik koordinat aktif</p>
+          </div>
+          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600"><Sprout size={22} /></div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-400 text-xs font-semibold mb-1">Node IoT Online</p>
+            <h3 className="text-2xl font-bold text-slate-800">{stats.nodeSensorOnline}</h3>
+            <p className="text-xs text-emerald-600 mt-1 font-medium">● Transmisi Stabil</p>
+          </div>
+          <div className="bg-green-50 p-3 rounded-xl text-green-600"><Cpu size={22} /></div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-400 text-xs font-semibold mb-1">Node Offline / Rusak</p>
+            <h3 className="text-2xl font-bold text-rose-600">{stats.nodeSensorOffline}</h3>
+            <p className="text-xs text-rose-500 mt-1 font-medium">⚠️ Butuh Pengecekan</p>
+          </div>
+          <div className="bg-rose-50 p-3 rounded-xl text-rose-600"><AlertTriangle size={22} /></div>
+        </div>
+      </div>
