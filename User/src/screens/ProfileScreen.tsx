@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
 
-// 🟢 [DIUBAH]: Menambahkan properti userEmail agar dinamis sesuai akun yang login
+// 🟢 [DIUBAH]: Menambahkan userName ke dalam props agar sinkron dengan data Registrasi/Login
 interface ProfileProps {
-  userEmail: string; 
+  userName: string;  // Data nama dinamis dari user yang sedang login
+  userEmail: string; // Data email dinamis dari user yang sedang login
   onLogout: () => void;
   onBackToDashboard: () => void; 
 }
 
-export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }: ProfileProps) {
+export default function ProfileScreen({ userName, userEmail, onLogout, onBackToDashboard }: ProfileProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
   const [loading] = useState(false);
@@ -16,16 +17,15 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
   // Status Verifikasi Dinamis
   const [isVerified, setIsVerified] = useState(false);
 
-  // 🟢 [DITAMBAHKAN]: State kontrol visibilitas formulir pop-up (Modal)
+  // State kontrol visibilitas formulir pop-up (Modal)
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // 🟢 [DITAMBAHKAN]: State penampung input formulir dari petani
+  // State penampung input formulir dari petani
   const [inputPhone, setInputPhone] = useState('');
   const [inputBirthDate, setInputBirthDate] = useState('');
 
-  // 🟢 [DIUBAH]: Mengosongkan data awal nomor, tanggal lahir, dan tanggal bergabung petani
+  // 🟢 [DIUBAH]: Menghapus properti 'name' statis dari state awal agar tidak bentrok
   const [userData, setUserData] = useState({
-    name: 'Vivi & Fazli',
     role: 'Pemilik Lahan (Master Admin)',
     phone: '', 
     birthDate: '', 
@@ -34,7 +34,7 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
     lokasi: 'Bandar Lampung, Indonesia'
   });
 
-  // 🟢 [DIUBAH]: Fungsi dialihkan untuk membuka formulir pengisian jika belum verifikasi
+  // Fungsi dialihkan untuk membuka formulir pengisian jika belum verifikasi
   const handleRequestVerification = () => {
     if (isVerified) {
       if (Platform.OS === 'web') {
@@ -49,7 +49,7 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
     setIsModalVisible(true);
   };
 
-  // 🟢 [DITAMBAHKAN]: Fungsi eksekusi tombol "Verifikasi Sekarang" di dalam modal
+  // Fungsi eksekusi tombol "Verifikasi Sekarang" di dalam modal
   const handleSummitVerification = () => {
     if (!inputPhone.trim() || !inputBirthDate.trim()) {
       if (Platform.OS === 'web') {
@@ -82,6 +82,16 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
     }
   };
 
+  // 🟢 [DITAMBAHKAN]: Fungsi pembuat inisial nama otomatis untuk Avatar (Contoh: "Fazli" -> "F")
+  const getInitials = (name: string) => {
+    if (!name) return 'PF'; // Default singkatan Petani Field jika kosong
+    const words = name.trim().split(' ');
+    if (words.length > 1) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return words[0][0].toUpperCase();
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -111,9 +121,11 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
           {/* KARTU AVATAR UTAMA */}
           <View style={[styles.avatarCard, { width: isDesktop ? '35%' : '100%' }]}>
             <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitials}>VF</Text>
+              {/* 🟢 [DIUBAH]: Inisial teks dalam lingkaran berubah dinamis mengikuti nama user */}
+              <Text style={styles.avatarInitials}>{getInitials(userName)}</Text>
             </View>
-            <Text style={styles.userName}>{userData.name}</Text>
+            {/* 🟢 [DIUBAH]: Menampilkan properti userName asli hasil input registrasi/login */}
+            <Text style={styles.userName}>{userName || 'Nama Petani'}</Text>
             <Text style={styles.userRole}>{userData.role}</Text>
             
             {/* AREA BADGE VERIFIKASI */}
@@ -138,12 +150,12 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📧 Email Akun</Text>
-                {/* 🟢 [DIUBAH]: Menggunakan value properti email dinamis dari props */}
+                {/* Menampilkan value properti email dinamis dari props */}
                 <Text style={styles.infoValue}>{userEmail || 'tidak_diketahui@email.com'}</Text>
               </View>
               <View style={styles.divider} />
               
-              {/* 🟢 [DIUBAH]: Baris nomor WhatsApp menampilkan teks merah jika belum verifikasi */}
+              {/* Baris nomor WhatsApp menampilkan teks merah jika belum verifikasi */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📞 No. WhatsApp</Text>
                 <Text style={[styles.infoValue, !isVerified && styles.textMuted]}>
@@ -152,7 +164,7 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
               </View>
               <View style={styles.divider} />
               
-              {/* 🟢 [DITAMBAHKAN]: Baris data tanggal lahir baru */}
+              {/* Baris data tanggal lahir baru */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>🎂 Tanggal Lahir</Text>
                 <Text style={[styles.infoValue, !isVerified && styles.textMuted]}>
@@ -161,7 +173,7 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
               </View>
               <View style={styles.divider} />
               
-              {/* 🟢 [DIUBAH]: Baris tanggal bergabung menjadi dinamis setelah klik submit */}
+              {/* Baris tanggal bergabung menjadi dinamis setelah klik submit */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📅 Akun Aktif Sejak</Text>
                 <Text style={[styles.infoValue, !isVerified && styles.textMuted]}>
@@ -197,7 +209,7 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
         </View>
       </ScrollView>
 
-      {/* 🟢 [DITAMBAHKAN]: Komponen UI Modal Lembar Formulir Verifikasi Baru */}
+      {/* Komponen UI Modal Lembar Formulir Verifikasi Baru */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -245,21 +257,17 @@ export default function ProfileScreen({ userEmail, onLogout, onBackToDashboard }
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  
   headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#064e3b', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderColor: '#047857', zIndex: 99 },
   elegantBackButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   backIconText: { color: '#ffffff', fontWeight: 'bold', fontSize: 20, marginTop: -2 },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
-  
   scrollContent: { padding: 30 },
   profileLayout: { justifyContent: 'space-between', gap: 24 },
-  
   avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', zIndex: 10, elevation: 3 },
   avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#34d399' },
   avatarInitials: { fontSize: 36, fontWeight: '800', color: '#065f46' },
   userName: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
   userRole: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 4, textAlign: 'center' },
-  
   badgeWrapper: { width: '100%', alignItems: 'center', marginTop: 16, zIndex: 50, elevation: 5 }, 
   badgeContainer: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 30, borderWidth: 1 },
   bgSuccess: { backgroundColor: '#d1fae5', borderColor: '#34d399' },
@@ -267,21 +275,16 @@ const styles = StyleSheet.create({
   verifiedBadge: { fontSize: 12, fontWeight: '700' },
   textSuccess: { color: '#065f46' },
   textWarning: { color: '#c2410c' },
-
   infoContainer: { gap: 12, zIndex: 1 },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: '#475569', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
   infoCard: { backgroundColor: '#ffffff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 20, borderWidth: 1, borderColor: '#e2e8f0' },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, alignItems: 'center' },
   infoLabel: { fontSize: 14, fontWeight: '600', color: '#64748b' },
   infoValue: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
-  
-  // 🟢 [DITAMBAHKAN]: Gaya teks penanda data belum diisi (berwarna merah redup)
   textMuted: { color: '#ef4444', fontWeight: '600', fontSize: 13 },
   divider: { height: 1, backgroundColor: '#f1f5f9' },
   logoutButton: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   logoutButtonText: { color: '#b91c1c', fontWeight: '800', fontSize: 14 },
-
-  // 🟢 [DITAMBAHKAN]: Rentetan gaya arsitektur untuk penempatan Modal Formulir Pop-up
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalContainer: { width: '100%', maxWidth: 450, backgroundColor: '#ffffff', borderRadius: 24, padding: 26 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 6 },
