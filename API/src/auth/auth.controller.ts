@@ -1,4 +1,4 @@
-import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Post, Get, HttpCode, HttpStatus } from '@nestjs/common'; // 1. Pastikan Get di-import
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -14,11 +14,15 @@ export class AuthController {
 
   @Post('register')
   async signUp(@Body() signUpDto: any) { 
-    // 🟢 ANTISIPASI: Ambil data nama dan password apa pun variasi nama properti dari Frontend
     const namaUser = signUpDto.name || signUpDto.nama;
     const passwordUser = signUpDto.password || signUpDto.pass;
-
-    // Kirim data yang sudah pasti aman ke auth.service
     return await this.authService.register(namaUser, signUpDto.email, passwordUser);
+  }
+
+  // 🔴 TAMBAHKAN ENDPOINT GET INI UNTUK CMS ADMIN
+  @Get('users')
+  async getAllUsers() {
+    // Pastikan di authService kamu sudah memiliki fungsi untuk mengambil semua data dari database/repository
+    return await this.authService.findAllUsers(); 
   }
 }
