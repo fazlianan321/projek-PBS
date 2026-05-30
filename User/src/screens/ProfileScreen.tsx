@@ -1,22 +1,48 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert } from 'react-native';
 
-export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
+// Definisi type props yang harus diterima dari App.tsx
+interface ProfileProps {
+  onLogout: () => void;
+  onBackToDashboard: () => void; // 🟢 Menghilangkan alur buntu navigasi
+}
+
+export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfileProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
   const [loading] = useState(false);
 
-  // State Data Profil Pengguna (Siap diintegrasikan ke API backend NestJS nantinya)
+  // 🟢 State Verifikasi Dinamis (Tidak langsung terverifikasi secara aneh)
+  const [isVerified, setIsVerified] = useState(false);
+
+  // State Data Profil Pengguna menggunakan Identitas Resmi Kampus
   const [userData] = useState({
-    name: 'Fazli',
+    name: 'Vivi & Fazli',
     role: 'Pemilik Lahan (Master Admin)',
-    email: 'fazli@terravision.io',
+    email: 'vivi_restu_anggraini@teknokrat.ac.id', // 🟢 Menggunakan email Teknokrat yang valid
     phone: '+62 812-3456-7890',
-    joinedSince: 'Oktober 2025',
-    totalLahan: 1,
+    joinedSince: 'Mei 2026',
     lahanName: 'Lahan Utama TRV-001',
     lokasi: 'Bandar Lampung, Indonesia'
   });
+
+  // Fungsi simulasi verifikasi data akun langsung ke server backend NestJS
+  const handleRequestVerification = () => {
+    Alert.alert(
+      "Pengajuan Verifikasi",
+      "Apakah Anda ingin mengajukan verifikasi akun menggunakan email institusi Teknokrat?",
+      [
+        { text: "Batal", style: "cancel" },
+        { 
+          text: "Ajukan", 
+          onPress: () => {
+            setIsVerified(true);
+            Alert.alert("Verifikasi Sukses", "Sistem AI berhasil memverifikasi hak akses kepemilikan lahan Anda!");
+          } 
+        }
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -28,8 +54,12 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
 
   return (
     <View style={styles.mainContainer}>
-      {/* HEADER BAR */}
+      
+      {/* HEADER BAR DENGAN TOMBOL NAVIGASI KEMBALI */}
       <View style={styles.headerBar}>
+        <TouchableOpacity style={styles.backButton} onPress={onBackToDashboard} activeOpacity={0.7}>
+          <Text style={styles.backButtonText}>⬅️ Kembali ke Lahan</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Profil Akun</Text>
       </View>
 
@@ -39,13 +69,22 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
           {/* KARTU AVATAR UTAMA */}
           <View style={[styles.avatarCard, { width: isDesktop ? '35%' : '100%' }]}>
             <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitials}>FZ</Text>
+              <Text style={styles.avatarInitials}>VF</Text>
             </View>
             <Text style={styles.userName}>{userData.name}</Text>
             <Text style={styles.userRole}>{userData.role}</Text>
-            <View style={styles.badgeContainer}>
-              <Text style={styles.verifiedBadge}>🛡️ Akun Terverifikasi</Text>
-            </View>
+            
+            {/* Badge Verifikasi Interaktif */}
+            <TouchableOpacity 
+              style={[styles.badgeContainer, isVerified ? styles.bgSuccess : styles.bgWarning]}
+              onPress={!isVerified ? handleRequestVerification : undefined}
+              disabled={isVerified}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.verifiedBadge, isVerified ? styles.textSuccess : styles.textWarning]}>
+                {isVerified ? '🛡️ Akun Terverifikasi' : '⚠️ Belum Verifikasi (Klik Sini)'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* DETAIL INFORMASI AKUN & LAHAN */}
@@ -103,17 +142,29 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  headerBar: { backgroundColor: '#064e3b', paddingHorizontal: 30, paddingVertical: 20, borderBottomWidth: 1, borderColor: '#047857' },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
+  
+  // Perbaikan Layout Header Bar Navigasi
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#064e3b', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderColor: '#047857' },
+  backButton: { backgroundColor: 'rgba(255, 255, 255, 0.15)', paddingVertical: 7, paddingHorizontal: 14, borderRadius: 10, marginRight: 15 },
+  backButtonText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
+  
   scrollContent: { padding: 30 },
   profileLayout: { justifyContent: 'space-between', gap: 24 },
-  avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 15 },
+  avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
   avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#34d399' },
   avatarInitials: { fontSize: 36, fontWeight: '800', color: '#065f46' },
   userName: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
   userRole: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 4, textAlign: 'center' },
-  badgeContainer: { marginTop: 16, backgroundColor: '#f1f5f9', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 30 },
-  verifiedBadge: { fontSize: 12, fontWeight: '700', color: '#475569' },
+  
+  // Styling Badge Verifikasi Dinamis
+  badgeContainer: { marginTop: 16, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 30 },
+  bgSuccess: { backgroundColor: '#d1fae5' },
+  bgWarning: { backgroundColor: '#ffedd5', borderWidth: 1, borderColor: '#fed7aa' },
+  verifiedBadge: { fontSize: 12, fontWeight: '700' },
+  textSuccess: { color: '#065f46' },
+  textWarning: { color: '#c2410c' },
+
   infoContainer: { gap: 12 },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: '#475569', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
   infoCard: { backgroundColor: '#ffffff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 20, borderWidth: 1, borderColor: '#e2e8f0' },
