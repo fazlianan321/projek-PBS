@@ -69,3 +69,22 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                 <Text style={styles.infoValue}>{userData.joinedSince}</Text>
               </View>
             </View>
+
+            {/* GRUP 2: INTEGRASI SISTEM IOT */}
+            <Text style={styles.sectionTitle}>Sistem & Kepemilikan Lahan</Text>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>📍 Lokasi Geografis</Text>
+                <Text style={styles.infoValue}>{userData.lokasi}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>🌿 Kode Node Lahan</Text>
+                <Text style={styles.infoValue}>{userData.lahanName}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>🤖 Mode Penjaga</Text>
+                <Text style={[styles.infoValue, { color: '#047857', fontWeight: '800' }]}>AI Otomatis Aktif</Text>
+              </View>
+            </View>
