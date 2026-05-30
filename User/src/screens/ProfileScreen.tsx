@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert } from 'react-native';
 
-// Definisi type props yang harus diterima dari App.tsx
 interface ProfileProps {
   onLogout: () => void;
-  onBackToDashboard: () => void; // 🟢 Menghilangkan alur buntu navigasi
+  onBackToDashboard: () => void; // Menghilangkan alur buntu navigasi
 }
 
 export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfileProps) {
@@ -12,22 +11,27 @@ export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfilePr
   const isDesktop = width > 768;
   const [loading] = useState(false);
 
-  // 🟢 State Verifikasi Dinamis (Tidak langsung terverifikasi secara aneh)
+  // State Verifikasi Dinamis
   const [isVerified, setIsVerified] = useState(false);
 
   // State Data Profil Pengguna menggunakan Identitas Resmi Kampus
   const [userData] = useState({
     name: 'Vivi & Fazli',
     role: 'Pemilik Lahan (Master Admin)',
-    email: 'vivi_restu_anggraini@teknokrat.ac.id', // 🟢 Menggunakan email Teknokrat yang valid
+    email: 'vivi_restu_anggraini@teknokrat.ac.id',
     phone: '+62 812-3456-7890',
     joinedSince: 'Mei 2026',
     lahanName: 'Lahan Utama TRV-001',
     lokasi: 'Bandar Lampung, Indonesia'
   });
 
-  // Fungsi simulasi verifikasi data akun langsung ke server backend NestJS
+  // Fungsi Alert Verifikasi (Dijamin langsung merespons saat ditekan)
   const handleRequestVerification = () => {
+    if (isVerified) {
+      Alert.alert("Informasi", "Akun Anda sudah berhasil terverifikasi.");
+      return;
+    }
+
     Alert.alert(
       "Pengajuan Verifikasi",
       "Apakah Anda ingin mengajukan verifikasi akun menggunakan email institusi Teknokrat?",
@@ -37,7 +41,9 @@ export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfilePr
           text: "Ajukan", 
           onPress: () => {
             setIsVerified(true);
-            Alert.alert("Verifikasi Sukses", "Sistem AI berhasil memverifikasi hak akses kepemilikan lahan Anda!");
+            setTimeout(() => {
+              Alert.alert("Verifikasi Sukses 🎉", "Sistem AI berhasil memverifikasi hak akses kepemilikan lahan Anda!");
+            }, 300);
           } 
         }
       ]
@@ -55,10 +61,10 @@ export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfilePr
   return (
     <View style={styles.mainContainer}>
       
-      {/* HEADER BAR DENGAN TOMBOL NAVIGASI KEMBALI */}
+      {/* HEADER BAR DENGAN TOMBOL NAVIGASI KEMBALI LEBIH ELEGAN */}
       <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.backButton} onPress={onBackToDashboard} activeOpacity={0.7}>
-          <Text style={styles.backButtonText}>⬅️ Kembali ke Lahan</Text>
+        <TouchableOpacity style={styles.elegantBackButton} onPress={onBackToDashboard} activeOpacity={0.6}>
+          <Text style={styles.backIconText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profil Akun</Text>
       </View>
@@ -74,11 +80,10 @@ export default function ProfileScreen({ onLogout, onBackToDashboard }: ProfilePr
             <Text style={styles.userName}>{userData.name}</Text>
             <Text style={styles.userRole}>{userData.role}</Text>
             
-            {/* Badge Verifikasi Interaktif */}
+            {/* Badge Verifikasi Interaktif - Diperbaiki agar responsif */}
             <TouchableOpacity 
               style={[styles.badgeContainer, isVerified ? styles.bgSuccess : styles.bgWarning]}
-              onPress={!isVerified ? handleRequestVerification : undefined}
-              disabled={isVerified}
+              onPress={handleRequestVerification}
               activeOpacity={0.7}
             >
               <Text style={[styles.verifiedBadge, isVerified ? styles.textSuccess : styles.textWarning]}>
@@ -143,35 +148,35 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   
-  // Perbaikan Layout Header Bar Navigasi
-  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#064e3b', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderColor: '#047857' },
-  backButton: { backgroundColor: 'rgba(255, 255, 255, 0.15)', paddingVertical: 7, paddingHorizontal: 14, borderRadius: 10, marginRight: 15 },
-  backButtonText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
+  // Desain Baru Header Minimalis & Tombol Kembali Bulat Elegan
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderColor: '#f1f5f9' },
+  elegantBackButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  backIconText: { fontSize: 14, fontWeight: 'bold', color: '#64748b', marginTop: -1 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
   
-  scrollContent: { padding: 30 },
+  scrollContent: { padding: 24 },
   profileLayout: { justifyContent: 'space-between', gap: 24 },
-  avatarCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 30, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
-  avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#d1fae5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#34d399' },
-  avatarInitials: { fontSize: 36, fontWeight: '800', color: '#065f46' },
-  userName: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
-  userRole: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 4, textAlign: 'center' },
+  avatarCard: { backgroundColor: '#ffffff', borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
+  avatarCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#ecfdf5', justifyContent: 'center', alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#a7f3d0' },
+  avatarInitials: { fontSize: 32, fontWeight: '700', color: '#059669' },
+  userName: { fontSize: 22, fontWeight: '700', color: '#0f172a' },
+  userRole: { fontSize: 13, color: '#64748b', marginTop: 4, textAlign: 'center' },
   
-  // Styling Badge Verifikasi Dinamis
-  badgeContainer: { marginTop: 16, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 30 },
-  bgSuccess: { backgroundColor: '#d1fae5' },
-  bgWarning: { backgroundColor: '#ffedd5', borderWidth: 1, borderColor: '#fed7aa' },
-  verifiedBadge: { fontSize: 12, fontWeight: '700' },
+  // Pembaruan Style Card Badge Verifikasi
+  badgeContainer: { marginTop: 16, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  bgSuccess: { backgroundColor: '#d1fae5', borderColor: '#a7f3d0' },
+  bgWarning: { backgroundColor: '#fee2e2', borderColor: '#fca5a5' },
+  verifiedBadge: { fontSize: 13, fontWeight: '600' },
   textSuccess: { color: '#065f46' },
-  textWarning: { color: '#c2410c' },
+  textWarning: { color: '#b91c1c' },
 
   infoContainer: { gap: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#475569', letterSpacing: 0.5, marginBottom: 6, marginTop: 8 },
-  infoCard: { backgroundColor: '#ffffff', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 20, borderWidth: 1, borderColor: '#e2e8f0' },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, alignItems: 'center' },
-  infoLabel: { fontSize: 14, fontWeight: '600', color: '#64748b' },
-  infoValue: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#94a3b8', letterSpacing: 0.5, marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },
+  infoCard: { backgroundColor: '#ffffff', borderRadius: 20, paddingHorizontal: 20, borderWidth: 1, borderColor: '#f1f5f9' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 16, alignItems: 'center' },
+  infoLabel: { fontSize: 14, fontWeight: '500', color: '#64748b' },
+  infoValue: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
   divider: { height: 1, backgroundColor: '#f1f5f9' },
-  logoutButton: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
-  logoutButtonText: { color: '#b91c1c', fontWeight: '800', fontSize: 14 }
+  logoutButton: { backgroundColor: '#fff5f5', borderWidth: 1, borderColor: '#fee2e2', borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  logoutButtonText: { color: '#e11d48', fontWeight: '600', fontSize: 14 }
 });
