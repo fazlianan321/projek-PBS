@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
 // Import Date Picker resmi Expo
 import DateTimePicker from '@react-native-community/datetimepicker';
+// 🟢 [DITAMBAHKAN]: Import AsyncStorage untuk mekanisme persistence data lokal
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ProfileProps {
   userName: string;  // Data nama dinamis dari user yang sedang login
@@ -13,7 +15,9 @@ interface ProfileProps {
 export default function ProfileScreen({ userName, userEmail, onLogout, onBackToDashboard }: ProfileProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
-  const [loading] = useState(false);
+  
+  // 🟢 [DIUBAH]: Default loading diubah menjadi true untuk menunggu pengecekan storage lokal selesai
+  const [loading, setLoading] = useState(true);
 
   // Status Verifikasi Dinamis
   const [isVerified, setIsVerified] = useState(false);
@@ -39,6 +43,32 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     lahanName: 'Lahan Utama TRV-001',
     lokasi: 'Bandar Lampung, Indonesia'
   });
+
+  // 🟢 [DITAMBAHKAN]: Memuat data dari AsyncStorage secara asinkron saat layar diakses pertama kali
+  useEffect(() => {
+    const loadPersistedData = async () => {
+      try {
+        const storageKey = `@profile_data_${userEmail}`;
+        const jsonValue = await AsyncStorage.getItem(storageKey);
+        
+        if (jsonValue != null) {
+          const persisted = JSON.parse(jsonValue);
+          setUserData(persisted.userData);
+          setIsVerified(persisted.isVerified);
+        }
+      } catch (error) {
+        console.error("Gagal memuat data dari local storage:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userEmail) {
+      loadPersistedData();
+    } else {
+      setLoading(false);
+    }
+  }, [userEmail]);
 
   // Efek samping untuk menangani jalannya hitung mundur (countdown) timer OTP
   useEffect(() => {
@@ -102,7 +132,7 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
   };
 
   // 🔐 LANGKAH 2: Validasi kesesuaian OTP yang dimasukkan pengguna
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     if (inputOtp !== generatedOtp) {
       const errMsg = "Kode OTP tidak sesuai. Silakan periksa kembali pesan WhatsApp Anda.";
       Platform.OS === 'web' ? alert(errMsg) : Alert.alert("Verifikasi Gagal ❌", errMsg);
@@ -113,15 +143,29 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
 
-    setUserData({
+    const updatedUserData = {
       ...userData,
       phone: inputPhone,
       birthDate: formatIndonesianDate(birthDate),
       joinedSince: formattedDate
-    });
+    };
 
+    // Update state komponen
+    setUserData(updatedUserData);
     setIsVerified(true);
     setIsModalVisible(false);
+
+    // 🟢 [DITAMBAHKAN]: Penyimpanan data permanen ke AsyncStorage berbasis email user
+    try {
+      const storageKey = `@profile_data_${userEmail}`;
+      const dataToSave = {
+        userData: updatedUserData,
+        isVerified: true
+      };
+      await AsyncStorage.setItem(storageKey, JSON.stringify(dataToSave));
+    } catch (error) {
+      console.error("Gagal menyimpan data ke local storage:", error);
+    }
 
     const successMsg = "Verifikasi Sukses 🎉\nNomor WhatsApp Anda berhasil diverifikasi ke cloud gateway sistem IoT!";
     Platform.OS === 'web' ? alert(successMsg) : Alert.alert("Selamat! 🎉", successMsg);
