@@ -194,3 +194,90 @@ export default function DashboardOverview() {
           <div className="bg-rose-50 p-3 rounded-xl text-rose-600"><AlertTriangle size={22} /></div>
         </div>
       </div>
+      {activeTab === 'telemetri' && (
+        <>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
+            <div className="mb-4">
+              <h2 className="text-base font-bold text-slate-800">Grafik Analisis Tren Kondisi Lahan (7 Hari Terakhir)</h2>
+              <p className="text-slate-400 text-xs">Rata-rata fluktuasi parameter mikro agregat dari seluruh node sensor</p>
+            </div>
+            
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weeklyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="hari" stroke="#94a3b8" fontSize={12} />
+                  <YAxis stroke="#94a3b8" fontSize={12} />
+                  <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Line type="monotone" dataKey="kelembapanRata2" name="💧 Kelembapan (%)" stroke="#3b82f6" strokeWidth={3} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="suhuRata2" name="🌡️ Suhu Udara (°C)" stroke="#f97316" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-base font-bold text-slate-800">Telemetri Real-Time Perangkat</h2>
+                <p className="text-slate-400 text-xs">Arus masuk data dari sensor mikrokontroler lahan</p>
+              </div>
+              <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs px-3 py-1.5 rounded-full font-semibold animate-pulse">
+                <Activity size={12} /> Auto Sync Active
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    <th className="pb-3 pl-2">ID Node</th>
+                    <th className="pb-3">Lokasi Zona</th>
+                    <th className="pb-3">💧 Kelembapan</th>
+                    <th className="pb-3">🌡️ Suhu Udara</th>
+                    <th className="pb-3">🧪 pH Tanah</th>
+                    <th className="pb-3">Status</th>
+                    <th className="pb-3 text-right pr-2">Update</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-700 text-sm divide-y divide-slate-50">
+                  {sensorStreams.map((sensor) => (
+                    <tr key={sensor.nodeId} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-4 pl-2 font-bold text-slate-900">{sensor.nodeId}</td>
+                      <td className="py-4 text-slate-500 text-xs">{sensor.lokasi}</td>
+                      <td className="py-4">
+                        {sensor.status === 'ONLINE' ? (
+                          <span className={`font-semibold ${sensor.kelembapanTanah < 50 ? 'text-amber-600' : 'text-blue-600'}`}>
+                            {sensor.kelembapanTanah}%
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="py-4">
+                        {sensor.status === 'ONLINE' ? (
+                          <span className="font-semibold text-orange-600">{sensor.suhuUdara}°C</span>
+                        ) : '—'}
+                      </td>
+                      <td className="py-4">
+                        {sensor.status === 'ONLINE' ? (
+                          <span className={`font-semibold ${sensor.phTanah < 6.0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                            {sensor.phTanah} pH
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="py-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          sensor.status === 'ONLINE' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {sensor.status === 'ONLINE' ? '● Online' : '○ Offline'}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right pr-2 text-xs text-slate-400">{sensor.lastUpdated}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
