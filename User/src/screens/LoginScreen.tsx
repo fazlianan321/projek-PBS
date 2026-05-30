@@ -3,7 +3,16 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityInd
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../config/api'; 
 
-export default function LoginScreen({ navigation, onNavigateToRegister, initialEmail, onLoginSuccess }: any) {
+// 1. 🟢 MEMBUAT INTERFACE PROPS: Mengunci tipe data agar bebas dari eror TypeScript
+interface LoginScreenProps {
+  navigation?: any;
+  onNavigateToRegister: () => void;
+  initialEmail: string;
+  onLoginSuccess: (name: string, email: string) => void; 
+}
+
+// 2. 🟢 PASANG INTERFACE: Menggantikan tipe data 'any' yang usang
+export default function LoginScreen({ navigation, onNavigateToRegister, initialEmail, onLoginSuccess }: LoginScreenProps) {
   const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +50,6 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
       if (response.ok) {
         const token = result.access_token;
         if (token) {
-          // Fallback storage aman: LocalStorage untuk web browser, SecureStore untuk HP fisik
           try {
             await SecureStore.setItemAsync('userToken', token);
           } catch (e) {
@@ -50,12 +58,14 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
           }
         }
         
-        // 🟢 PERBAIKAN UTAMA: Langsung tembak callback untuk ganti halaman root ke DASHBOARD
+        // Ekstraksi nama & email riil dari data respon API
+        const fallbackName = email.split('@')[0];
+        const userRealName = result.user?.name || result.name || fallbackName;
+        const userRealEmail = result.user?.email || result.email || email;
+
+        // 3. 🟢 EKSEKUSI CALLBACK: Aman dan terikat parameter data profil secara dinamis
         if (typeof onLoginSuccess === 'function') {
-          onLoginSuccess();
-        } else {
-          // Fallback cadangan jika properti fungsi mengalami kendala render
-          Alert.alert('Sukses', 'Login berhasil!');
+          onLoginSuccess(userRealName, userRealEmail);
         }
       } else {
         Alert.alert('Login Gagal', result.message || 'Email atau password salah.');
@@ -258,7 +268,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 6,
-    boxShadow: '0px 4px 14px rgba(6, 78, 59, 0.25)', 
+    shadowColor: '#064e3b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 5,
   },
   premiumButtonText: {
     color: '#ffffff',
