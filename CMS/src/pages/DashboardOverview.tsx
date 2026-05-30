@@ -24,12 +24,11 @@ interface UserData {
   id: string;
   username: string; 
   email: string;
-  role: 'Admin' | 'Petani' | 'Manajer Lahan';
+  role: string;
   status: 'Verified' | 'Unverified'; 
   tanggalGabung: string;
 }
 
-// PERBAIKAN: Port disesuaikan langsung ke host utama NestJS (tanpa /api jika global prefix tidak diset)
 const API_BASE_URL = 'http://localhost:3000';
 
 const weeklyTrendData = [
@@ -60,16 +59,16 @@ export default function DashboardOverview() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<'Admin' | 'Petani' | 'Manajer Lahan'>('Petani');
+  const [newUserRole, setNewUserRole] = useState<string>('Petani');
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
       
-      // PERBAIKAN: Route fetch disesuaikan dengan endpoint log NestJS (/sensor/latest/:lahanId)
+      // 🔴 PERBAIKAN: Mengarahkan endpoint user ke /auth/users sesuai rute NestJS kamu
       const [resUsers, resSensors] = await Promise.all([
-        fetch(`${API_BASE_URL}/users`),
-        fetch(`${API_BASE_URL}/sensor/latest/1`) // Contoh mengambil data Lahan ID 1
+        fetch(`${API_BASE_URL}/auth/users`),
+        fetch(`${API_BASE_URL}/sensor/latest/1`) 
       ]);
 
       if (!resUsers.ok || !resSensors.ok) throw new Error('Respon server backend bermasalah.');
@@ -77,9 +76,19 @@ export default function DashboardOverview() {
       const resUsersJson = await resUsers.json();
       const resSensorsJson = await resSensors.json();
 
-      setUsersList(resUsersJson.data || resUsersJson); 
+      // 🔴 PERBAIKAN: Lakukan mapping data agar properti 'nama' dari database terbaca sebagai 'username' di tabel
+      const rawUsers = resUsersJson.data || resUsersJson;
+      const mappedUsers = Array.isArray(rawUsers) ? rawUsers.map((user: any) => ({
+        id: user.id || 'USR-X',
+        username: user.nama || 'Tanpa Nama', 
+        email: user.email || '-',
+        role: user.role || 'Petani',
+        status: 'Verified', // Default value karena kolom status tidak ada di DB
+        tanggalGabung: '-'  // Default value karena kolom createdAt tidak ada di DB
+      })) : [];
+
+      setUsersList(mappedUsers); 
       
-      // PERBAIKAN: Jika NestJS merespon berupa objek tunggal, bungkus ke array agar .map() tidak error
       const sensorData = resSensorsJson.data || resSensorsJson;
       setSensorStreams(Array.isArray(sensorData) ? sensorData : [sensorData]);
       
@@ -114,7 +123,7 @@ export default function DashboardOverview() {
     const offlineSensors = sensorStreams.filter(s => s && s.status === 'OFFLINE').length;
 
     setStats({
-      totalPetani: usersList.filter(u => u.role === 'Petani').length,
+      totalPetani: usersList.filter(u => u.role.toLowerCase() === 'petani' || u.role === 'USER').length,
       petaniTerverifikasi: verifiedCount,
       totalLahanAktif: 85, 
       nodeSensorOnline: onlineSensors,
@@ -144,15 +153,14 @@ export default function DashboardOverview() {
     if (!newUserName || !newUserEmail) return;
 
     const newUserData = {
-      username: newUserName,
+      name: newUserName, // Disesuaikan kunci parameter dengan auth.controller.ts (name atau nama)
       email: newUserEmail,
       role: newUserRole,
-      status: 'Verified' as const,
-      tanggalGabung: 'Hari ini'
+      pass: 'pbas1234' // Berikan password default untuk registrasi dari sisi admin CMS
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, { // Menyesuaikan route register NestJS kamu
+      const response = await fetch(`${API_BASE_URL}/auth/register`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUserData)
@@ -163,7 +171,7 @@ export default function DashboardOverview() {
         throw new Error();
       }
     } catch {
-      setUsersList([...usersList, { ...newUserData, id: `USR-00${usersList.length + 1}` } as UserData]);
+      setUsersList([...usersList, { id: `USR-00${usersList.length + 1}`, username: newUserName, email: newUserEmail, role: newUserRole, status: 'Verified', tanggalGabung: 'Hari ini' }]);
     }
 
     setNewUserName('');
@@ -296,7 +304,8 @@ export default function DashboardOverview() {
               <p className="text-slate-400 text-xs">Rata-rata fluktuasi parameter mikro agregat dari seluruh node sensor</p>
             </div>
             
-            <div className="h-72 w-full" style={{ minWidth: 0, minHeight: '288px' }}>
+            {/* 🔴 PERBAIKAN: Memberikan style height absolut agar ResponsiveContainer Recharts dapat mengalkulasi dimensi layout */}
+            <div className="w-full" style={{ height: '300px', minWidth: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weeklyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -386,7 +395,7 @@ export default function DashboardOverview() {
 
       {/* Tab Content 2: Users Management */}
       {activeTab === 'users' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 animate-fadeIn">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <div>
               <h2 className="text-base font-bold text-slate-800">Daftar Otoritas Akun & Manajemen Petani</h2>
@@ -421,7 +430,7 @@ export default function DashboardOverview() {
               <div>
                 <label className="block text-slate-500 text-xs font-bold mb-1.5">Role Otoritas</label>
                 <select 
-                  value={newUserRole} onChange={(e) => setNewUserRole(e.target.value as any)}
+                  value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}
                   className="w-full text-sm bg-white border border-slate-200 px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
                 >
                   <option value="Petani">Petani (Operator Lahan)</option>
