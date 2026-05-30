@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// 🟢 1. KONFIGURASI URL BACKEND (Ganti dengan IP Laptop kamu)
-const IP_LAPTOP = 'GANTI_PAKAI_IP_LEPTOP_KAMU'; 
-const LAHAN_ID = 'TRV-001'; // ID Lahan simulasi yang sinkron dengan DB NestJS
+// 🟢 CONFIGURASI URL BACKEND (Sudah Menggunakan IP Kamu: 192.168.1.38)
+const IP_LAPTOP = '192.168.1.38'; 
+const LAHAN_ID = 'TRV-001'; 
 const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`; 
 
 export default function DashboardScreen({ onLogout }: { onLogout: () => void }) {
@@ -18,16 +18,16 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
   const [isUploading, setIsUploading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
-  // State Data Sensor Real-Time (Default Awal Sebelum Fetch)
+  // State Data Sensor Real-Time
   const [metrics, setMetrics] = useState({
     soilMoisture: '--%',
     temperature: '--°C',
-    humidity: '75%', // Data pelengkap layout
+    humidity: '75%', 
     vegetationHealth: 'Optimal',
     lastSync: 'Menghubungkan ke server...',
   });
 
-  // 🟢 2. FUNGSI FETCH DATA ASLI DARI NESTJS (Bahasa Indonesia: suhu & kelembapan)
+  // 🟢 FUNGSI FETCH DATA ASLI DARI NESTJS (Dengan Auto-Sync Status Pompa)
   const fetchRealtimeSensorData = async () => {
     try {
       let token = null;
@@ -45,8 +45,12 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
         const result = await response.json();
         
         if (result) {
+          // Sinkronisasi lampu indikator sakelar di HP secara otomatis dari state server
+          if (result.statusPompa !== undefined) {
+            setIsPumpActive(result.statusPompa);
+          }
+
           setMetrics({
-            // Memetakan 'kelembapan' dan 'suhu' dari database NestJS kamu
             soilMoisture: (result.kelembapan !== undefined ? result.kelembapan : '--') + '%',
             temperature: (result.suhu !== undefined ? result.suhu : '--') + '°C',
             humidity: '75%', 
@@ -65,7 +69,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
     }
   };
 
-  // 🟢 3. LIVE AUTO-POLLING (Looping fetch otomatis setiap 5 detik)
+  // 🟢 LIVE AUTO-POLLING (Looping fetch otomatis setiap 5 detik)
   useEffect(() => {
     fetchRealtimeSensorData(); 
 
@@ -82,8 +86,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
     setRefreshing(false);
   };
 
-  // Handler Aksi Pompa Irigasi
-  // 🟢 PERBAIKAN: Mengubah fungsi pompa manual agar terintegrasi dengan API NestJS secara asinkron
+  // 🟢 FUNGSI TOGGLE SAKELAR POMPA (POST KE NESTJS)
   const handleTogglePump = async () => {
     const newState = !isPumpActive;
     const PUMP_API_URL = `http://${IP_LAPTOP}:3000/sensor/pump/toggle`;
@@ -101,7 +104,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
       });
 
       if (response.ok) {
-        setIsPumpActive(newState); // Lampu indikator di HP berubah jika server sukses merespon
+        setIsPumpActive(newState); 
         Alert.alert(
           "Perintah Terkirim", 
           newState ? "Pompa irigasi berhasil diaktifkan via API." : "Pompa irigasi dinonaktifkan."
@@ -141,7 +144,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
   return (
     <View style={styles.mainContainer}>
       
-      {/* 🟢 TOPBAR NAVIGATION HEADER */}
+      {/* TOPBAR NAVIGATION HEADER */}
       <View style={styles.headerBar}>
         <View style={styles.brandContainer}>
           <Text style={styles.brandLogo}>🌱 TerraVision</Text>
@@ -165,7 +168,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
           </Text>
         </View>
 
-        {/* 🟢 PREMIUM DYNAMIC RESPONSIVE GRID MATRIX CONTAINER */}
+        {/* PREMIUM DYNAMIC RESPONSIVE GRID MATRIX CONTAINER */}
         <View style={[styles.gridContainer, { flexDirection: isDesktop ? 'row' : 'column' }]}>
           
           {/* CARD 1: KELEMBABAN TANAH */}
@@ -209,7 +212,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
           </View>
         </View>
 
-        {/* 🟢 NEW SECTION: INTERACTIVE CONTROLLER ACTIONS */}
+        {/* INTERACTIVE CONTROLLER ACTIONS */}
         <Text style={styles.sectionTitle}>Tindakan & Kontrol Aktual</Text>
         <View style={[styles.actionContainer, { flexDirection: isDesktop ? 'row' : 'column' }]}>
           
@@ -260,7 +263,6 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
   );
 }
 
-// 🟢 PREMIUM DESIGN SYSTEMS
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
   subWelcomeText: { fontSize: 14, color: '#64748b', marginTop: 6, lineHeight: 22 },
   timeHighlight: { color: '#047857', fontWeight: '700' },
   gridContainer: { justifyContent: 'space-between', gap: 16, marginBottom: 32 },
-  card: { backgroundColor: '#ffffff', borderRadius: 18, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', boxShadow: '0px 4px 12px rgba(15, 23, 42, 0.04)' },
+  card: { backgroundColor: '#ffffff', borderRadius: 18, padding: 24, borderWidth: 1, borderColor: '#e2e8f0' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   cardEmoji: { fontSize: 20 },
   cardLabel: { fontSize: 11, fontWeight: '800', color: '#64748b', letterSpacing: 0.8 },
@@ -285,11 +287,9 @@ const styles = StyleSheet.create({
   statusBadge: { alignSelf: 'flex-start', fontSize: 11, fontWeight: '800', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 30 },
   badgeSuccess: { backgroundColor: '#d1fae5', color: '#065f46' },
   badgePremium: { backgroundColor: '#ecfdf5', color: '#047857', borderWidth: 1, borderColor: '#a7f3d0' },
-  
-  // STYLES FITUR INTERAKTIF BARU
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 16, marginTop: 8 },
   actionContainer: { justifyContent: 'space-between', gap: 16, marginBottom: 32 },
-  actionCard: { backgroundColor: '#ffffff', borderRadius: 18, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', boxShadow: '0px 4px 12px rgba(15, 23, 42, 0.04)' },
+  actionCard: { backgroundColor: '#ffffff', borderRadius: 18, padding: 24, borderWidth: 1, borderColor: '#e2e8f0' },
   actionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   actionIcon: { fontSize: 22 },
   actionTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
@@ -302,8 +302,7 @@ const styles = StyleSheet.create({
   resultBox: { marginTop: 16, padding: 12, backgroundColor: '#eff6ff', borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
   resultTitle: { fontSize: 12, fontWeight: '700', color: '#1e3a8a' },
   resultText: { fontSize: 14, fontWeight: '700', color: '#2563eb', marginTop: 4 },
-
-  alertPanel: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 6, borderLeftColor: '#064e3b', boxShadow: '0px 4px 10px rgba(15, 23, 42, 0.03)' },
+  alertPanel: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 6, borderLeftColor: '#064e3b' },
   alertHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   alertTitleIcon: { fontSize: 18 },
   alertTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },

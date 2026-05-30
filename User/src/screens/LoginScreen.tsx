@@ -62,7 +62,7 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
       }
     } catch (error) {
       Alert.alert('Error', 'Tidak dapat terhubung ke server. Pastikan API dan IP Address benar!');
-      console.log('Error koneksi:', error);
+      console.log('Error koneksi:', error);  
     } finally {
       setIsLoading(false);
     }
