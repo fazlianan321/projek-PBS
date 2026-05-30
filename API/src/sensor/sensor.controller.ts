@@ -3,7 +3,7 @@ import { SensorService } from './sensor.service';
 
 @Controller('sensor')
 export class SensorController {
-  // 🟢 Tambahkan state memory global untuk menyimpan status pompa secara real-time berdasarkan Lahan ID
+  // 🟢 Memory lokal untuk menyimpan status sakelar pompa secara real-time berdasarkan Lahan ID
   private statusPompaGlobal: Record<string, boolean> = {};
 
   constructor(private readonly sensorService: SensorService) {}
@@ -13,34 +13,38 @@ export class SensorController {
     return this.sensorService.createData(data);
   }
 
-  // 🟢 PERBAIKAN GET LATEST: Gabungkan data sensor terakhir dari database dengan status sakelar HP terbaru
+  // 🟢 GET LATEST (FINAL): Memetakan data sensor dan memaksakan status sakelar HP masuk ke JSON
   @Get('latest/:lahanId')
   async getLatest(@Param('lahanId') lahanId: string) {
     const dataTerakhir = await this.sensorService.getLatestData(lahanId);
-    
-    // Ambil status pompa dari memory, jika belum pernah ditekan, default ke false (mati)
     const statusSakelarHp = this.statusPompaGlobal[lahanId] ?? false;
 
-    // Jika data dari DB berupa object, kita sisipkan statusPompa ter-update ke dalamnya
-    if (dataTerakhir && typeof dataTerakhir === 'object') {
+    // Jika data dari DB ditemukan, konversi ke objek biasa dan sisipkan status pompa terbaru
+    if (dataTerakhir) {
+      const plainData = JSON.parse(JSON.stringify(dataTerakhir));
       return {
-        ...dataTerakhir,
-        statusPompa: statusSakelarHp
+        id: plainData.id,
+        suhu: plainData.suhu,
+        kelembapan: plainData.kelembapan,
+        lahanId: plainData.lahanId,
+        createdAt: plainData.createdAt,
+        statusPompa: statusSakelarHp // 🚰 Disinkronkan langsung dari memory sakelar HP
       };
     }
 
+    // Fallback jika tabel database masih kosong
     return { 
       lahanId, 
       statusPompa: statusSakelarHp 
     };
   }
 
-  // 🟢 PERBAIKAN POST TOGGLE: Simpan status sakelar dari HP ke memory global agar langsung disinkronkan
+  // 🟢 POST TOGGLE (FINAL): Menerima sinyal klik tombol dari HP dan menyimpannya ke server
   @Post('pump/toggle')
   async togglePump(@Body() data: { lahanId: string; statusPompa: boolean }) {
     console.log(`[BACKEND IoT] Perintah Sakelar Diterima! Lahan: ${data.lahanId} | Pompa: ${data.statusPompa ? 'NYALA 🚰' : 'MATI 🔴'}`);
     
-    // Simpan ke dalam memory global berdasarkan ID Lahan
+    // Simpan status ke dalam memory global server
     this.statusPompaGlobal[data.lahanId] = data.statusPompa;
     
     return {
