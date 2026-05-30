@@ -44,7 +44,7 @@ export default function DashboardOverview() {
     { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
     { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
     { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
-    { nodeId: 'TRV-004', locations: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
+    { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
   ]);
 
   useEffect(() => {
@@ -66,18 +66,13 @@ export default function DashboardOverview() {
   }, []);
 
   return (
-    // ==========================================
-    // ====== COMMIT 10: TAILWIND MAIN WRAPPER ==
-    // ==========================================
+
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">TerraVision CMS Dashboard</h1>
         <p className="text-slate-500 text-sm">Sistem Manajemen Informasi Terintegrasi Lahan Pertanian Cerdas</p>
       </div>
 
-      {/* ========================================== */}
-      {/* ====== COMMIT 7: STATS UI CARDS RENDERING  */}
-      {/* ========================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
@@ -115,10 +110,6 @@ export default function DashboardOverview() {
           <div className="bg-rose-50 p-3 rounded-xl text-rose-600"><AlertTriangle size={22} /></div>
         </div>
       </div>
-
-      {/* ========================================== */}
-      {/* ====== COMMIT 8: TREND LINECHART COMPONENT */}
-      {/* ========================================== */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
         <div className="mb-4">
           <h2 className="text-base font-bold text-slate-800">Grafik Analisis Tren Kondisi Lahan (7 Hari Terakhir)</h2>
@@ -132,9 +123,6 @@ export default function DashboardOverview() {
               <XAxis dataKey="hari" stroke="#94a3b8" fontSize={12} />
               <YAxis stroke="#94a3b8" fontSize={12} />
               
-              {/* ========================================== */}
-              {/* ====== COMMIT 4: FIX TOOLTIP STYLE PROPS = */}
-              {/* ========================================== */}
               <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
               <Legend verticalAlign="top" height={36} iconType="circle" />
               
@@ -145,9 +133,6 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* ====== COMMIT 9: TELEMETRY REALTIME TABLE  */}
-      {/* ========================================== */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
