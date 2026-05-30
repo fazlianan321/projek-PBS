@@ -7,13 +7,19 @@ const IP_LAPTOP = '192.168.1.38';
 const LAHAN_ID = 'TRV-001'; 
 const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`; 
 
-export default function DashboardScreen({ onLogout }: { onLogout: () => void }) {
+// 🟢 PERBAIKAN TIPE: Daftarkan onNavigateToProfile ke dalam properti komponen
+interface DashboardProps {
+  onLogout: () => void;
+  onNavigateToProfile: () => void;
+}
+
+export default function DashboardScreen({ onLogout, onNavigateToProfile }: DashboardProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
   const [refreshing, setRefreshing] = useState(false);
   const [loadingSession, setLoadingSession] = useState(true);
 
-  // State Fitur Interaktif Baru
+  // State Fitur Interaktif
   const [isPumpActive, setIsPumpActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
@@ -121,7 +127,7 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
     }
   };
 
-  // 🟢 PERBAIKAN: Mengirim request analisis foto asli ke server NestJS (Bukan Mocking Lagi)
+  // 🟢 REQUEST ANALISIS FOTO DAUN ASLI KE NESTJS
   const handleUploadPhoto = async () => {
     setIsUploading(true);
     setAnalysisResult(null);
@@ -141,7 +147,6 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
 
       if (response.ok) {
         const json = await response.json();
-        // Gabungkan diagnosis utama dan saran tindakan dari AI server ke dalam UI
         setAnalysisResult(`${json.result}\n💡 Saran: ${json.suggestion}`);
         Alert.alert("Analisis Selesai", "AI Vision berhasil mendiagnosis kondisi kesehatan daun.");
       } else {
@@ -176,9 +181,16 @@ export default function DashboardScreen({ onLogout }: { onLogout: () => void }) 
           <Text style={styles.brandLogo}>🌱 TerraVision</Text>
           <Text style={styles.brandSubtitle}>Smart Farming Integrated System</Text>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.7}>
-          <Text style={styles.logoutText}>Keluar Sistem</Text>
-        </TouchableOpacity>
+        
+        {/* 🟢 AREA TOMBOL NAVIGASI KANAN */}
+        <View style={styles.navActionsContainer}>
+          <TouchableOpacity style={styles.profileButton} onPress={onNavigateToProfile} activeOpacity={0.7}>
+            <Text style={styles.profileButtonText}>👤 Profil</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.7}>
+            <Text style={styles.logoutText}>Keluar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -297,8 +309,14 @@ const styles = StyleSheet.create({
   brandContainer: { flexDirection: 'column' },
   brandLogo: { fontSize: 22, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
   brandSubtitle: { fontSize: 11, color: '#34d399', fontWeight: '700', letterSpacing: 0.5, marginTop: 2 },
+  
+  // 🟢 STYLING BARU UNTUK NAVIGASI KANAN HEADER
+  navActionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  profileButton: { backgroundColor: '#047857', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: '#34d399' },
+  profileButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
   logoutButton: { backgroundColor: 'rgba(241, 245, 249, 0.12)', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.25)' },
   logoutText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
+  
   scrollContent: { padding: 30 },
   welcomeSection: { marginBottom: 32 },
   welcomeText: { fontSize: 26, fontWeight: '800', color: '#0f172a', letterSpacing: -0.5 },
