@@ -62,4 +62,18 @@ export class AuthService {
       userId: newUser.id,
     };
   } 
+
+  // 🔴 TAMBAHAN BARU: Mengambil seluruh data user untuk kebutuhan Admin CMS
+  async findAllUsers() {
+    return await this.prisma.user.findMany({
+      select: {
+        id: true,
+        nama: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true, // Ambil field tanggal register jika ada di skema Prisma kamu
+      },
+    });
+  }
 }
