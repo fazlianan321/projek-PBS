@@ -75,3 +75,21 @@ export default function DashboardOverview() {
     { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
     { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
   ]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSensorStreams((prevStreams: SensorDataStream[]) =>
+        prevStreams.map((sensor: SensorDataStream) => {
+          if (sensor.status === 'OFFLINE') return sensor;
+          return {
+            ...sensor,
+            kelembapanTanah: Math.max(30, Math.min(90, sensor.kelembapanTanah + (Math.random() > 0.5 ? 1 : -1))),
+            suhuUdara: parseFloat((sensor.suhuUdara + (Math.random() > 0.5 ? 0.2 : -0.2)).toFixed(1)),
+            lastUpdated: 'Baru saja'
+          };
+        })
+      );
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
