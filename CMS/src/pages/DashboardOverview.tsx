@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Sprout, Cpu, AlertTriangle, Activity, UserPlus, Trash2, Edit2 } from 'lucide-react';
+import { Users, Sprout, Cpu, AlertTriangle, Activity, UserPlus, Trash2, Edit2, WifiOff } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 interface DashboardStats {
@@ -29,11 +29,13 @@ interface UserData {
   tanggalGabung: string;
 }
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
 const weeklyTrendData = [
   { hari: 'Senin', kelembapanRata2: 62, suhuRata2: 27.4 },
   { hari: 'Selasa', kelembapanRata2: 58, suhuRata2: 28.1 },
   { hari: 'Rabu', kelembapanRata2: 65, suhuRata2: 26.9 },
-  { hari: 'Kamis', kelembapanRata2: 70, suhuRata2: 26.5 },
+  { hari: 'Kamis', kelembapanRata2: 70, strokeWidth: 26.5 },
   { hari: 'Jumat', kelembapanRata2: 52, suhuRata2: 29.3 },
   { hari: 'Sabtu', kelembapanRata2: 60, suhuRata2: 28.0 },
   { hari: 'Minggu', kelembapanRata2: 64, suhuRata2: 27.8 },
@@ -41,37 +43,88 @@ const weeklyTrendData = [
 
 export default function DashboardOverview() {
   const [activeTab, setActiveTab] = useState<'telemetri' | 'users'>('telemetri');
+  const [usersList, setUsersList] = useState<UserData[]>([]);
+  const [sensorStreams, setSensorStreams] = useState<SensorDataStream[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalPetani: 0,
+    petaniTerverifikasi: 0,
+    totalLahanAktif: 0,
+    nodeSensorOnline: 0,
+    nodeSensorOffline: 0,
+  });
 
-  const [usersList, setUsersList] = useState<UserData[]>([
-    { id: 'USR-001', nama: 'Supardi ', email: 'supardi.lahan@gmail.com', role: 'Petani', statusVerifikasi: true, tanggalGabung: '12 Jan 2026' },
-    { id: 'USR-002', nama: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', statusVerifikasi: true, tanggalGabung: '05 Feb 2026' },
-    { id: 'USR-003', nama: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', statusVerifikasi: false, tanggalGabung: '28 Mei 2026' },
-  ]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<'Admin' | 'Petani' | 'Manajer Lahan'>('Petani');
 
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPetani: 142,
-    petaniTerverifikasi: 128,
-    totalLahanAktif: 85,
-    nodeSensorOnline: 32,
-    nodeSensorOffline: 2,
-  });
+  // 1. GET DATA REAL DARI BACKEND
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Ambil data dari endpoint /users dan /sensors secara parallel
+      const [resUsers, resSensors] = await Promise.all([
+        fetch(`${API_BASE_URL}/users`),
+        fetch(`${API_BASE_URL}/sensors`)
+      ]);
 
-  const [sensorStreams, setSensorStreams] = useState<SensorDataStream[]>([
-    { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
-    { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
-    { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
-    { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
-  ]);
+      if (!resUsers.ok || !resSensors.ok) throw new Error('Respon server backend bermasalah.');
+
+      const dataUsers = await resUsers.json();
+      const dataSensors = await resSensors.json();
+
+      setUsersList(dataUsers);
+      setSensorStreams(dataSensors);
+      setApiError(null);
+    } catch (err: any) {
+      console.warn('Backend offline, memuat data lokal sebagai fallback.');
+      setApiError('Koneksi database pusat offline. Menjalankan mode simulasi lokal.');
+      
+      // Fallback data simulasi lokal jika API server belum dijalankan
+      setUsersList([
+        { id: 'USR-001', nama: 'Supardi ', email: 'supardi.lahan@gmail.com', role: 'Petani', statusVerifikasi: true, tanggalGabung: '12 Jan 2026' },
+        { id: 'USR-002', nama: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', statusVerifikasi: true, tanggalGabung: '05 Feb 2026' },
+        { id: 'USR-003', nama: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', statusVerifikasi: false, tanggalGabung: '28 Mei 2026' },
+      ]);
+      setSensorStreams([
+        { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
+        { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
+        { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
+        { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Sinkronisasi data statistik agregat secara dinamis berdasarkan data pengguna riil
+  useEffect(() => {
+    const verifiedCount = usersList.filter(u => u.statusVerifikasi).length;
+    const onlineSensors = sensorStreams.filter(s => s.status === 'ONLINE').length;
+    const offlineSensors = sensorStreams.filter(s => s.status === 'OFFLINE').length;
+
+    setStats({
+      totalPetani: usersList.filter(u => u.role === 'Petani').length,
+      petaniTerverifikasi: verifiedCount,
+      totalLahanAktif: 85, 
+      nodeSensorOnline: onlineSensors,
+      nodeSensorOffline: offlineSensors,
+    });
+  }, [usersList, sensorStreams]);
+
+  // Simulasi fluktuasi telemetri IoT (hanya untuk sensor berstatus ONLINE)
+  useEffect(() => {
     const interval = setInterval(() => {
-      setSensorStreams((prevStreams: SensorDataStream[]) =>
-        prevStreams.map((sensor: SensorDataStream) => {
+      setSensorStreams((prevStreams) =>
+        prevStreams.map((sensor) => {
           if (sensor.status === 'OFFLINE') return sensor;
           return {
             ...sensor,
@@ -82,25 +135,15 @@ export default function DashboardOverview() {
         })
       );
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const verifiedCount = usersList.filter(u => u.statusVerifikasi).length;
-    setStats(prev => ({
-      ...prev,
-      totalPetani: 139 + usersList.length,
-      petaniTerverifikasi: 126 + verifiedCount
-    }));
-  }, [usersList]);
-
-  const handleAddUser = (e: React.FormEvent) => {
+  // 2. HANDLER DATA REAL KE SERVER (POST, TOGGLE VERIFICATION, DELETE)
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
 
-    const newUser: UserData = {
-      id: `USR-00${usersList.length + 1}`,
+    const newUserData = {
       nama: newUserName,
       email: newUserEmail,
       role: newUserRole,
@@ -108,20 +151,60 @@ export default function DashboardOverview() {
       tanggalGabung: 'Hari ini'
     };
 
-    setUsersList([...usersList, newUser]);
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUserData)
+      });
+      if (response.ok) {
+        loadDashboardData();
+      } else {
+        throw new Error();
+      }
+    } catch {
+      // Client-side fallback jika backend offline
+      setUsersList([...usersList, { ...newUserData, id: `USR-00${usersList.length + 1}` }]);
+    }
+
     setNewUserName('');
     setNewUserEmail('');
     setShowAddForm(false);
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsersList(usersList.filter(user => user.id !== id));
+  const toggleVerification = async (id: string) => {
+    const targetUser = usersList.find(u => u.id === id);
+    if (!targetUser) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${id}/verify`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statusVerifikasi: !targetUser.statusVerifikasi })
+      });
+      if (response.ok) {
+        loadDashboardData();
+      } else {
+        throw new Error();
+      }
+    } catch {
+      setUsersList(usersList.map(user => 
+        user.id === id ? { ...user, statusVerifikasi: !user.statusVerifikasi } : user
+      ));
+    }
   };
 
-  const toggleVerification = (id: string) => {
-    setUsersList(usersList.map(user => 
-      user.id === id ? { ...user, statusVerifikasi: !user.statusVerifikasi } : user
-    ));
+  const handleDeleteUser = async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        loadDashboardData();
+      } else {
+        throw new Error();
+      }
+    } catch {
+      setUsersList(usersList.filter(user => user.id !== id));
+    }
   };
 
   return (
@@ -130,6 +213,11 @@ export default function DashboardOverview() {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">TerraVision CMS Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Sistem Manajemen Informasi Terintegrasi Lahan Pertanian Cerdas</p>
+          {apiError && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-lg font-medium">
+              <WifiOff size={14} /> {apiError}
+            </div>
+          )}
         </div>
         
         <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200/60 self-start md:self-auto">
@@ -194,7 +282,7 @@ export default function DashboardOverview() {
               <p className="text-slate-400 text-xs">Rata-rata fluktuasi parameter mikro agregat dari seluruh node sensor</p>
             </div>
             
-            <div className="h-72 w-full">
+            <div className="h-72 w-full" style={{ minWidth: 0, minHeight: '288px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weeklyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
