@@ -40,9 +40,6 @@ export default function DashboardOverview() {
     nodeSensorOffline: 2,
   });
 
-  // ==========================================
-  // ====== COMMIT 9: TELEMETRY STREAM STATE ==
-  // ==========================================
   const [sensorStreams, setSensorStreams] = useState<SensorDataStream[]>([
     { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 68, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
     { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
@@ -50,4 +47,27 @@ export default function DashboardOverview() {
     { nodeId: 'TRV-004', locations: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
   ]);
 
-  
+  // ==========================================
+  // ====== COMMIT 5: EXPLICIT TYPES HOOKS ====
+  // ====== COMMIT 6: REALTIME CORE INTERVAL ==
+  // ==========================================
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSensorStreams((prevStreams: SensorDataStream[]) =>
+        prevStreams.map((sensor: SensorDataStream) => {
+          if (sensor.status === 'OFFLINE') return sensor;
+          return {
+            ...sensor,
+            kelembapanTanah: Math.max(30, Math.min(90, sensor.kelembapanTanah + (Math.random() > 0.5 ? 1 : -1))),
+            suhuUdara: parseFloat((sensor.suhuUdara + (Math.random() > 0.5 ? 0.2 : -0.2)).toFixed(1)),
+            lastUpdated: 'Baru saja'
+          };
+        })
+      );
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+   
