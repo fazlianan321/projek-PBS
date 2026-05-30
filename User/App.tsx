@@ -7,7 +7,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen'; 
 
 export default function App() {
-  // 2. 🟢 Tambahkan tipe 'PROFILE' ke dalam state rute navigasi
+  // 2. 🟢 Mengelola status rute navigasi aplikasi secara dinamis
   const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'PROFILE'>('LOGIN');
   const [savedEmail, setSavedEmail] = useState('');
 
@@ -37,16 +37,15 @@ export default function App() {
       ) : currentScreen === 'DASHBOARD' ? (
         <DashboardScreen 
           onLogout={() => setCurrentScreen('LOGIN')} 
-          // 3. 🟢 Oper prop ke Dashboard untuk navigasi ke Profile jika dibutuhkan
-          // (Atau jika di dalam DashboardScreen kamu punya tombol tab profil)
+          // 3. 🟢 Oper prop ke Dashboard untuk navigasi masuk ke Profile
           onNavigateToProfile={() => setCurrentScreen('PROFILE')}
         />
       ) : (
-        // 4. 🟢 Render ProfileScreen saat currentScreen bernilai 'PROFILE'
+        // 4. 🟢 Render ProfileScreen dengan alur keluar masuk yang lengkap
         <ProfileScreen 
           onLogout={() => setCurrentScreen('LOGIN')} 
-          // Jika ingin ada tombol kembali ke Dashboard dari halaman profil:
-          // onBackToDashboard={() => setCurrentScreen('DASHBOARD')} 
+          // 🟢 KUNCI PERBAIKAN: Berikan jalan balik ke dashboard lahan cerdas
+          onBackToDashboard={() => setCurrentScreen('DASHBOARD')} 
         />
       )}
     </SafeAreaView>
