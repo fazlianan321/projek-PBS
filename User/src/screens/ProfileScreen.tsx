@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
+// Import Date Picker resmi Expo
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-// 🟢 [DIUBAH]: Menambahkan userName ke dalam props agar sinkron dengan data Registrasi/Login
 interface ProfileProps {
   userName: string;  // Data nama dinamis dari user yang sedang login
   userEmail: string; // Data email dinamis dari user yang sedang login
@@ -16,15 +17,20 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
 
   // Status Verifikasi Dinamis
   const [isVerified, setIsVerified] = useState(false);
-
-  // State kontrol visibilitas formulir pop-up (Modal)
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // State penampung input formulir dari petani
+  // State Penampung Form Identitas
   const [inputPhone, setInputPhone] = useState('');
-  const [inputBirthDate, setInputBirthDate] = useState('');
+  const [birthDate, setBirthDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isDateSelected, setIsDateSelected] = useState(false);
 
-  // 🟢 [DIUBAH]: Menghapus properti 'name' statis dari state awal agar tidak bentrok
+  // 🔐 STATE MANAJEMEN ALUR OTP (One-Time Password)
+  const [otpStep, setOtpStep] = useState<'INPUT_DATA' | 'INPUT_OTP'>('INPUT_DATA');
+  const [inputOtp, setInputOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState(''); // Tempat menyimpan OTP simulasi
+  const [timer, setTimer] = useState(60); // Hitung mundur dalam detik
+
   const [userData, setUserData] = useState({
     role: 'Pemilik Lahan (Master Admin)',
     phone: '', 
@@ -34,57 +40,95 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     lokasi: 'Bandar Lampung, Indonesia'
   });
 
-  // Fungsi dialihkan untuk membuka formulir pengisian jika belum verifikasi
+  // Efek samping untuk menangani jalannya hitung mundur (countdown) timer OTP
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (otpStep === 'INPUT_OTP' && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prevTimer) => prevTimer - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpStep, timer]);
+
+  // Fungsi membuka pop-up Modal Verifikasi
   const handleRequestVerification = () => {
     if (isVerified) {
-      if (Platform.OS === 'web') {
-        alert("Informasi Akun: Akun petani Anda sudah berstatus aktif dan terverifikasi.");
-      } else {
-        Alert.alert("Informasi Akun", "Akun petani Anda sudah berstatus aktif dan terverifikasi.");
-      }
+      const msg = "Informasi Akun: Akun petani Anda sudah berstatus aktif dan terverifikasi.";
+      Platform.OS === 'web' ? alert(msg) : Alert.alert("Informasi Akun", msg);
       return;
     }
     
-    // Buka formulir input modal jika belum verifikasi
+    // Reset kondisi form ke awal saat modal dibuka kembali
+    setOtpStep('INPUT_DATA');
+    setInputOtp('');
+    setTimer(60);
     setIsModalVisible(true);
   };
 
-  // Fungsi eksekusi tombol "Verifikasi Sekarang" di dalam modal
-  const handleSummitVerification = () => {
-    if (!inputPhone.trim() || !inputBirthDate.trim()) {
-      if (Platform.OS === 'web') {
-        alert("Data Tidak Lengkap: Silakan isi Nomor WhatsApp dan Tanggal Lahir terlebih dahulu.");
-      } else {
-        Alert.alert("Data Tidak Lengkap", "Silakan isi Nomor WhatsApp dan Tanggal Lahir terlebih dahulu.");
-      }
+  // Fungsi formatting objek tanggal ke string bahasa Indonesia
+  const formatIndonesianDate = (date: Date) => {
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  // Handler kalender pop-up di Android/iOS
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios'); 
+    if (selectedDate) {
+      setBirthDate(selectedDate);
+      setIsDateSelected(true);
+    }
+  };
+
+  // 🔐 LANGKAH 1: Validasi form identitas awal & Picu Pengiriman OTP via WA
+  const handleRequestOtp = () => {
+    if (!inputPhone.trim() || !isDateSelected) {
+      const alertMsg = "Data Tidak Lengkap: Silakan isi Nomor WhatsApp dan Pilih Tanggal Lahir terlebih dahulu.";
+      Platform.OS === 'web' ? alert(alertMsg) : Alert.alert("Data Tidak Lengkap", alertMsg);
       return;
     }
 
-    // Ambil bulan dan tahun hari ini secara otomatis untuk tanggal bergabung
+    // Simulasi generator 6-digit kode OTP acak
+    const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(randomOtp);
+    setTimer(60); // Set ulang timer ke 60 detik
+
+    // Alert simulasi (Pada aplikasi asli, bagian ini diganti dengan integrasi API Gateway WhatsApp Anda)
+    const otpNotice = `[SISTEM TERVISI OTP GATEWAY]\nKode verifikasi rahasia Anda adalah: ${randomOtp}`;
+    Platform.OS === 'web' ? alert(otpNotice) : Alert.alert("🔐 Kode OTP Dikirim", otpNotice);
+
+    // Pindahkan layar modal ke tahap penginputan kode OTP
+    setOtpStep('INPUT_OTP');
+  };
+
+  // 🔐 LANGKAH 2: Validasi kesesuaian OTP yang dimasukkan pengguna
+  const handleVerifyOtp = () => {
+    if (inputOtp !== generatedOtp) {
+      const errMsg = "Kode OTP tidak sesuai. Silakan periksa kembali pesan WhatsApp Anda.";
+      Platform.OS === 'web' ? alert(errMsg) : Alert.alert("Verifikasi Gagal ❌", errMsg);
+      return;
+    }
+
+    // Jika OTP sukses dicocokkan, kunci data ke profil utama
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
 
-    // Suntikkan data input ke profil secara reaktif
     setUserData({
       ...userData,
       phone: inputPhone,
-      birthDate: inputBirthDate,
+      birthDate: formatIndonesianDate(birthDate),
       joinedSince: formattedDate
     });
 
     setIsVerified(true);
     setIsModalVisible(false);
 
-    if (Platform.OS === 'web') {
-      alert("Verifikasi Sukses 🎉\nNomor WhatsApp dan koordinat lahan berhasil diintegrasikan ke sistem AI!");
-    } else {
-      Alert.alert("Verifikasi Sukses 🎉", "Nomor WhatsApp dan koordinat lahan berhasil diintegrasikan ke sistem AI!");
-    }
+    const successMsg = "Verifikasi Sukses 🎉\nNomor WhatsApp Anda berhasil diverifikasi ke cloud gateway sistem IoT!";
+    Platform.OS === 'web' ? alert(successMsg) : Alert.alert("Selamat! 🎉", successMsg);
   };
 
-  // 🟢 [DITAMBAHKAN]: Fungsi pembuat inisial nama otomatis untuk Avatar (Contoh: "Fazli" -> "F")
   const getInitials = (name: string) => {
-    if (!name) return 'PF'; // Default singkatan Petani Field jika kosong
+    if (!name) return 'PF'; 
     const words = name.trim().split(' ');
     if (words.length > 1) {
       return (words[0][0] + words[1][0]).toUpperCase();
@@ -111,20 +155,14 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
         <Text style={styles.headerTitle}>Profil Akun Petani</Text>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always"
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
         <View style={[styles.profileLayout, { flexDirection: isDesktop ? 'row' : 'column' }]}>
           
           {/* KARTU AVATAR UTAMA */}
           <View style={[styles.avatarCard, { width: isDesktop ? '35%' : '100%' }]}>
             <View style={styles.avatarCircle}>
-              {/* 🟢 [DIUBAH]: Inisial teks dalam lingkaran berubah dinamis mengikuti nama user */}
               <Text style={styles.avatarInitials}>{getInitials(userName)}</Text>
             </View>
-            {/* 🟢 [DIUBAH]: Menampilkan properti userName asli hasil input registrasi/login */}
             <Text style={styles.userName}>{userName || 'Nama Petani'}</Text>
             <Text style={styles.userRole}>{userData.role}</Text>
             
@@ -150,12 +188,10 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📧 Email Akun</Text>
-                {/* Menampilkan value properti email dinamis dari props */}
                 <Text style={styles.infoValue}>{userEmail || 'tidak_diketahui@email.com'}</Text>
               </View>
               <View style={styles.divider} />
               
-              {/* Baris nomor WhatsApp menampilkan teks merah jika belum verifikasi */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📞 No. WhatsApp</Text>
                 <Text style={[styles.infoValue, !isVerified && styles.textMuted]}>
@@ -164,7 +200,6 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
               </View>
               <View style={styles.divider} />
               
-              {/* Baris data tanggal lahir baru */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>🎂 Tanggal Lahir</Text>
                 <Text style={[styles.infoValue, !isVerified && styles.textMuted]}>
@@ -173,7 +208,6 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
               </View>
               <View style={styles.divider} />
               
-              {/* Baris tanggal bergabung menjadi dinamis setelah klik submit */}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>📅 Akun Aktif Sejak</Text>
                 <Text style={[styles.infoValue, !isVerified && styles.textMuted]}>
@@ -209,43 +243,94 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
         </View>
       </ScrollView>
 
-      {/* Komponen UI Modal Lembar Formulir Verifikasi Baru */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
+      {/* MODAL INTERAKTIF: Mendukung Peralihan Alur Multi-Step (Form Input -> Layar OTP) */}
+      <Modal animationType="slide" transparent={true} visible={isModalVisible} onRequestClose={() => setIsModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Formulir Aktivasi Akun Petani</Text>
-            <Text style={styles.modalSubtitle}>Lengkapi data identitas di bawah untuk mengaktifkan sistem kontrol otomatis IoT lahan Anda.</Text>
+            
+            {/* STAGE A: PENGISIAN DATA UTAMA */}
+            {otpStep === 'INPUT_DATA' ? (
+              <View>
+                <Text style={styles.modalTitle}>Formulir Aktivasi Akun Petani</Text>
+                <Text style={styles.modalSubtitle}>Lengkapi data identitas di bawah untuk mengaktifkan sistem kontrol otomatis IoT lahan Anda.</Text>
 
-            <Text style={styles.inputLabel}>Nomor WhatsApp Aktif</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Contoh: 081234567890"
-              keyboardType="phone-pad"
-              value={inputPhone}
-              onChangeText={setInputPhone}
-            />
+                <Text style={styles.inputLabel}>Nomor WhatsApp Aktif</Text>
+                <TextInput style={styles.textInput} placeholder="Contoh: 081234567890" keyboardType="phone-pad" value={inputPhone} onChangeText={setInputPhone} />
 
-            <Text style={styles.inputLabel}>Tanggal Lahir Pemilik Lahan</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Contoh: 12 Agustus 1985"
-              value={inputBirthDate}
-              onChangeText={setInputBirthDate}
-            />
+                <Text style={styles.inputLabel}>Tanggal Lahir Pemilik Lahan</Text>
+                
+                {Platform.OS === 'web' ? (
+                  <input 
+                    type="date" 
+                    style={webInputStyles}
+                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => {
+                      if(e.target.value) {
+                        setBirthDate(new Date(e.target.value));
+                        setIsDateSelected(true);
+                      }
+                    }}
+                  />
+                ) : (
+                  <View>
+                    <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
+                      <Text style={styles.datePickerButtonText}>
+                        {isDateSelected ? formatIndonesianDate(birthDate) : "📅 Pilih Tanggal dari Kalender"}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {showDatePicker && (
+                      <DateTimePicker value={birthDate} mode="date" display={Platform.OS === 'ios' ? 'spinner' : 'default'} maximumDate={new Date()} onChange={handleDateChange} />
+                    )}
+                  </View>
+                )}
 
-            <View style={styles.modalActionRow}>
-              <TouchableOpacity style={styles.cancelModalButton} onPress={() => setIsModalVisible(false)}>
-                <Text style={styles.cancelModalText}>Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.submitModalButton} onPress={handleSummitVerification}>
-                <Text style={styles.submitModalText}>Verifikasi Sekarang</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity style={styles.cancelModalButton} onPress={() => setIsModalVisible(false)}>
+                    <Text style={styles.cancelModalText}>Batal</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.submitModalButton} onPress={handleRequestOtp}>
+                    <Text style={styles.submitModalText}>Kirim Kode OTP →</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              // STAGE B: TAMPILAN INTERAKTIF MASUKKAN KODE VERIFIKASI OTP
+              <View>
+                <Text style={styles.modalTitle}>Verifikasi Keamanan Akun 🔐</Text>
+                <Text style={styles.modalSubtitle}>Kami telah mengirimkan 6 digit kode OTP keamanan ke nomor WhatsApp <Text style={{fontWeight:'700', color: '#064e3b'}}>{inputPhone}</Text>.</Text>
+
+                <Text style={styles.inputLabel}>Masukkan Kode OTP</Text>
+                <TextInput 
+                  style={[styles.textInput, styles.otpCenterInput]} 
+                  placeholder="• • • • • •" 
+                  keyboardType="number-pad" 
+                  maxLength={6}
+                  value={inputOtp}
+                  onChangeText={setInputOtp}
+                />
+
+                <View style={styles.timerContainer}>
+                  {timer > 0 ? (
+                    <Text style={styles.timerText}>Kirim ulang kode dalam <Text style={{color:'#ef4444', fontWeight:'700'}}>{timer} detik</Text></Text>
+                  ) : (
+                    <TouchableOpacity onPress={handleRequestOtp}>
+                      <Text style={styles.resendOtpLink}>🔄 Kirim Ulang Kode OTP via WhatsApp</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity style={styles.cancelModalButton} onPress={() => setOtpStep('INPUT_DATA')}>
+                    <Text style={styles.cancelModalText}>Kembali</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.submitModalButton} onPress={handleVerifyOtp}>
+                    <Text style={styles.submitModalText}>Validasi & Aktifkan 🌱</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
           </View>
         </View>
       </Modal>
@@ -253,6 +338,21 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     </View>
   );
 }
+
+// Elemen Styling khusus HTML5 Input Date Web Browser
+const webInputStyles = {
+  width: '100%',
+  backgroundColor: '#f8fafc',
+  border: '1px solid #cbd5e1',
+  borderRadius: '10px',
+  padding: '12px',
+  fontSize: '14px',
+  color: '#0f172a',
+  fontFamily: 'sans-serif',
+  outline: 'none',
+  boxSizing: 'border-box' as 'border-box',
+  marginBottom: '12px'
+};
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#f8fafc' },
@@ -290,7 +390,14 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 6 },
   modalSubtitle: { fontSize: 13, color: '#64748b', lineHeight: 18, marginBottom: 20 },
   inputLabel: { fontSize: 13, fontWeight: '700', color: '#334155', marginBottom: 6, marginTop: 12 },
-  textInput: { width: '100%', backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#0f172a' },
+  textInput: { width: '100%', backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#0f172a', marginBottom: 12 },
+  datePickerButton: { width: '100%', backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 14, justifyContent: 'center', marginBottom: 12 },
+  datePickerButtonText: { fontSize: 14, color: '#475569', fontWeight: '600' },
+  // STYLING KHUSUS TAMPILAN FIELD OTP
+  otpCenterInput: { textAlign: 'center', fontSize: 26, letterSpacing: 10, fontWeight: '800', color: '#064e3b', paddingVertical: 10, backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+  timerContainer: { alignItems: 'center', marginTop: 8, marginBottom: 4 },
+  timerText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
+  resendOtpLink: { fontSize: 13, color: '#047857', fontWeight: '700', textDecorationLine: 'underline' },
   modalActionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 24 },
   cancelModalButton: { paddingVertical: 12, paddingHorizontal: 18, borderRadius: 10, backgroundColor: '#f1f5f9' },
   cancelModalText: { color: '#475569', fontWeight: '700', fontSize: 14 },
