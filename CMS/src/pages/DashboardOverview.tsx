@@ -47,10 +47,6 @@ export default function DashboardOverview() {
     { nodeId: 'TRV-004', locations: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
   ]);
 
-  // ==========================================
-  // ====== COMMIT 5: EXPLICIT TYPES HOOKS ====
-  // ====== COMMIT 6: REALTIME CORE INTERVAL ==
-  // ==========================================
   useEffect(() => {
     const interval = setInterval(() => {
       setSensorStreams((prevStreams: SensorDataStream[]) =>
@@ -70,4 +66,13 @@ export default function DashboardOverview() {
   }, []);
 
   return (
-   
+    // ==========================================
+    // ====== COMMIT 10: TAILWIND MAIN WRAPPER ==
+    // ==========================================
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-800">TerraVision CMS Dashboard</h1>
+        <p className="text-slate-500 text-sm">Sistem Manajemen Informasi Terintegrasi Lahan Pertanian Cerdas</p>
+      </div>
+
+      
