@@ -1,6 +1,5 @@
 // simulator.js
 const LAHAN_ID = 'TRV-001'; 
-// 🟢 Kita butuh API URL input data dan API URL untuk mengecek data terbaru (termasuk status pompa)
 const API_INPUT_URL = 'http://localhost:3000/sensor/input';
 const API_LATEST_URL = `http://localhost:3000/sensor/latest/${LAHAN_ID}`;
 
@@ -25,15 +24,18 @@ function kirimDataSensorOtomatis() {
   })
   .then(res => {
     if (res.ok) {
-      // 2. Jika sukses kirim data sensor, langsung cek status pompa terbaru yang dikontrol dari HP Fazli
+      // 2. Mengambil data status terbaru dari NestJS
       return fetch(API_LATEST_URL);
     }
     throw new Error('Gagal mengirim data sensor ke NestJS');
   })
-  .then(res => res.json())
+  // 🟢 PERBAIKAN DI SINI: Ekstrak response stream dari API_LATEST_URL menjadi JSON objek
+  .then(res => {
+    if (!res.ok) throw new Error('Gagal mengambil data status terbaru');
+    return res.json();
+  })
   .then(dataTerakhir => {
-    // 🟢 PERBAIKAN UTAMA: Membaca status sakelar pompa secara real-time dari backend
-    // Jika dataTerakhir memiliki status pompa, gunakan itu. Jika belum ada di DB, default ke false (Mati)
+    // Membaca status sakelar pompa secara real-time dari backend
     const statusPompa = dataTerakhir && dataTerakhir.statusPompa !== undefined ? dataTerakhir.statusPompa : false;
     const infoPompa = statusPompa ? '🚰 NYALA (Menyiram Lahan)' : '🔴 MATI (Standby)';
 
@@ -42,7 +44,7 @@ function kirimDataSensorOtomatis() {
     );
   })
   .catch(err => {
-    console.log("❌ Jaringan Terputus: Server NestJS mati atau IP salah.");
+    console.log("❌ Jaringan Terputus atau Error:", err.message);
   });
 }
 
