@@ -16,3 +16,10 @@ const apiClient = axios.create({
   timeout: REQUEST_TIMEOUT,
   headers: { 'Content-Type': 'application/json' },
 });
+
+apiClient.interceptors.request.use((config) => {
+  if (config.data && JSON.stringify(config.data).length > 10000) {
+    throw new Error('Payload melampaui batas aman.');
+  }
+  return config;
+});
