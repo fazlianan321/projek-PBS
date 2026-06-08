@@ -46,3 +46,4 @@ export default function AiDiagnosticScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
   const isMounted = useRef<boolean>(true);
+  const abortController = useRef<AbortController | null>(null);
