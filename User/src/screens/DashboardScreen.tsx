@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert, Image } from 'react-native'; // 🟢 DITAMBAHKAN: 'Image' untuk preview foto
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker'; // 🟢 DITAMBAHKAN: Library untuk akses galeri HP
 
 // 🟢 CONFIGURASI URL BACKEND (Menggunakan IP Laptop Terbaru Kamu: 192.168.1.6)
 const IP_LAPTOP = '192.168.1.6'; 
@@ -24,6 +25,7 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
   const [isPumpActive, setIsPumpActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null); // 🟢 DITAMBAHKAN: State penampung URI foto dari galeri
 
   // State Data Sensor Real-Time
   const [metrics, setMetrics] = useState({
@@ -128,10 +130,37 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     }
   };
 
-  // 🟢 REQUEST ANALISIS FOTO DAUN ASLI KE NESTJS (Legacy Feature)
+  // 🟢 FUNGSI UPGRADE: REQUEST ANALISIS FOTO DAUN ASLI KE NESTJS (Sekarang Menggunakan Galeri & FormData)
   const handleUploadPhoto = async () => {
+    // 1. Buka Media Library / Galeri HP
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    // Jika user membatalkan pilihan foto, hentikan proses
+    if (result.canceled) return;
+
+    const imageUri = result.assets[0].uri;
+    setSelectedImageUri(imageUri); // Simpan URI untuk pratinjau di layar
     setIsUploading(true);
     setAnalysisResult(null);
+
+    // 2. Bungkus data ke dalam FormData (Multipart Upload)
+    const formData = new FormData();
+    formData.append('lahanId', LAHAN_ID);
+
+    const filename = imageUri.split('/').pop() || 'photo.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+    formData.append('file', {
+      uri: imageUri,
+      name: filename,
+      type: type,
+    } as any);
 
     const AI_API_URL = `http://${IP_LAPTOP}:3000/sensor/ai/analyze-leaf`;
 
@@ -139,11 +168,10 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
       const response = await fetch(AI_API_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // Catatan: Jangan set 'Content-Type' manual ke 'multipart/form-data', fetch akan otomatis membuat boundary-nya.
         },
-        body: JSON.stringify({
-          lahanId: LAHAN_ID,
-        }),
+        body: formData,
       });
 
       if (response.ok) {
@@ -294,9 +322,15 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
             </Text>
 
             <View style={[styles.aiActionsGrid, { flexDirection: isDesktop ? 'row' : 'column' }]}>
-              {/* SUB PANEL KIRI: Fitur Legacy Scan Foto Lama */}
+              {/* SUB PANEL KIRI: Fitur Scan Foto Lama (Sekarang Sudah Ditingkatkan) */}
               <View style={[styles.aiSubPanel, { width: isDesktop ? '49%' : '100%' }]}>
                 <Text style={styles.subPanelTitle}>Quick Scan (Legacy API)</Text>
+                
+                {/* 🟢 DITAMBAHKAN: Preview Foto Real-time Sebelum/Sesudah Terupload */}
+                {selectedImageUri && (
+                  <Image source={{ uri: selectedImageUri }} style={styles.imagePreview} />
+                )}
+
                 <TouchableOpacity style={[styles.actionButton, styles.btnPrimary]} onPress={handleUploadPhoto} disabled={isUploading} activeOpacity={0.8}>
                   {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📤 Ambil / Upload Foto</Text>}
                 </TouchableOpacity>
@@ -370,6 +404,8 @@ const styles = StyleSheet.create({
   btnPrimary: { backgroundColor: '#2563eb' },
   btnPremiumLayer: { backgroundColor: '#8b5cf6' },
   
+  // 🟢 DITAMBAHKAN: Style komponen Preview Foto
+  imagePreview: { width: '100%', height: 160, borderRadius: 10, marginBottom: 14, resizeMode: 'cover', borderWidth: 1, borderColor: '#cbd5e1' },
   resultBox: { marginTop: 16, padding: 12, backgroundColor: '#eff6ff', borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
   resultTitle: { fontSize: 12, fontWeight: '700', color: '#1e3a8a' },
   resultText: { fontSize: 14, fontWeight: '700', color: '#2563eb', marginTop: 4 },
