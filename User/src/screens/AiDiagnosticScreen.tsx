@@ -33,3 +33,15 @@ interface Lahan {
   id: string; 
   namaLahan: string; 
 }
+
+interface AiResult { 
+  result: string; 
+  suggestion: string; 
+  analyzedAt: string; 
+}
+
+export default function AiDiagnosticScreen() {
+  const [daftarLahan, setDaftarLahan] = useState<Lahan[]>([]);
+  const [selectedLahan, setSelectedLahan] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [aiResult, setAiResult] = useState<AiResult | null>(null);
