@@ -212,3 +212,36 @@ export default function AiDiagnosticScreen() {
     </ScrollView>
   );
 }
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9fafb', padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#1f2937', marginBottom: 4 },
+  subtitle: { fontSize: 13, color: '#6b7280', marginBottom: 20, lineHeight: 18 },
+  card: { backgroundColor: '#ffffff', padding: 16, borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 10 },
+  lahanButton: { padding: 14, borderRadius: 10, backgroundColor: '#f3f4f6', marginBottom: 8, borderWidth: 1, borderColor: '#e5e7eb' },
+  lahanButtonActive: { backgroundColor: '#e6f4ea', borderColor: '#10b981' },
+  lahanText: { fontSize: 14, color: '#4b5563', fontWeight: '500' },
+  lahanTextActive: { color: '#065f46', fontWeight: '700' },
+  emptyText: { color: '#9ca3af', fontSize: 13, fontStyle: 'italic', marginVertical: 8 },
+  leafIcon: { fontSize: 36, textAlign: 'center' },
+  uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#a7f3d0', backgroundColor: '#f0fdf4', borderRadius: 10, padding: 18, alignItems: 'center', marginVertical: 12 },
+  uploadBoxText: { fontSize: 12, color: '#047857', fontWeight: '600', marginTop: 6 },
+  button: { backgroundColor: '#059669', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 6, shadowColor: '#059669', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  buttonDisabled: { backgroundColor: '#9ca3af', shadowOpacity: 0, elevation: 0 },
+  buttonText: { color: '#ffffff', fontWeight: 'bold', fontSize: 15 },
+  resultCard: { backgroundColor: '#ffffff', padding: 16, borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, minHeight: 160, justifyContent: 'center', marginBottom: 40 },
+  resultContainer: { width: '100%' },
+  center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
+  loadingText: { color: '#4b5563', marginTop: 10, fontSize: 13, fontWeight: '500' },
+  placeholderText: { color: '#9ca3af', textAlign: 'center', fontSize: 13, lineHeight: 18, paddingHorizontal: 10 },
+  resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingBottom: 10, marginBottom: 12 },
+  badge: { backgroundColor: '#d1fae5', color: '#065f46', fontSize: 11, fontWeight: 'bold', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  timeText: { fontSize: 11, color: '#9ca3af' },
+  resultTitle: { fontSize: 12, color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  resultValue: { fontSize: 19, fontWeight: 'bold', marginTop: 4, marginBottom: 14 },
+  textGreen: { color: '#059669' },
+  textAmber: { color: '#d97706' },
+  suggestionBox: { backgroundColor: '#fffbeb', borderLeftWidth: 4, borderLeftColor: '#f59e0b', padding: 14, borderRadius: 8 },
+  suggestionTitle: { fontSize: 14, fontWeight: 'bold', color: '#78350f' },
+  suggestionText: { fontSize: 13, color: '#92400e', marginTop: 4, lineHeight: 20 }
+});
