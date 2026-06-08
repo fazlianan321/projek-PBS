@@ -11,9 +11,12 @@ const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`;
 interface DashboardProps {
   onLogout: () => void;
   onNavigateToProfile: () => void;
+  // 🟢 [DITAMBAHKAN]: Properti untuk navigasi ke layar AI Full
+  onNavigateToAi: () => void;
 }
 
-export default function DashboardScreen({ onLogout, onNavigateToProfile }: DashboardProps) {
+// 🟢 [DITAMBAHKAN]: Memanggil onNavigateToAi di parameter
+export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavigateToAi }: DashboardProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
   const [refreshing, setRefreshing] = useState(false);
@@ -273,9 +276,18 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile }: Dashb
               <Text style={styles.actionTitle}>Analisis Daun (AI Vision)</Text>
             </View>
             <Text style={styles.actionDesc}>Unggah foto morfologi daun tanaman kamu untuk mendeteksi dini infeksi hama patogen.</Text>
+            
+            {/* TOMBOL LAMA (TETAP ADA) */}
             <TouchableOpacity style={[styles.actionButton, styles.btnPrimary]} onPress={handleUploadPhoto} disabled={isUploading} activeOpacity={0.8}>
               {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📤 Ambil / Upload Foto</Text>}
             </TouchableOpacity>
+
+            {/* 🟢 [DITAMBAHKAN]: TOMBOL BARU UNTUK BUKA LAYAR AI EXPERT */}
+            <TouchableOpacity style={[styles.actionButton, styles.btnPremiumLayer, { marginTop: 12 }]} onPress={onNavigateToAi} activeOpacity={0.8}>
+              <Text style={styles.actionButtonText}>🚀 Buka TerraVision AI Expert</Text>
+            </TouchableOpacity>
+
+            {/* HASIL DIAGNOSA LAMA (TETAP ADA) */}
             {analysisResult && (
               <View style={styles.resultBox}>
                 <Text style={styles.resultTitle}>Hasil Deteksi AI Vision:</Text>
@@ -310,7 +322,6 @@ const styles = StyleSheet.create({
   brandLogo: { fontSize: 22, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
   brandSubtitle: { fontSize: 11, color: '#34d399', fontWeight: '700', letterSpacing: 0.5, marginTop: 2 },
   
-  // 🟢 STYLING BARU UNTUK NAVIGASI KANAN HEADER
   navActionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   profileButton: { backgroundColor: '#047857', paddingVertical: 9, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: '#34d399' },
   profileButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
@@ -343,6 +354,7 @@ const styles = StyleSheet.create({
   btnSuccess: { backgroundColor: '#059669' },
   btnDanger: { backgroundColor: '#dc2626' },
   btnPrimary: { backgroundColor: '#2563eb' },
+  btnPremiumLayer: { backgroundColor: '#8b5cf6' }, // 🟢 [DITAMBAHKAN]: Warna ungu untuk tombol AI Expert
   resultBox: { marginTop: 16, padding: 12, backgroundColor: '#eff6ff', borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
   resultTitle: { fontSize: 12, fontWeight: '700', color: '#1e3a8a' },
   resultText: { fontSize: 14, fontWeight: '700', color: '#2563eb', marginTop: 4 },
