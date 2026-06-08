@@ -57,3 +57,6 @@ export default function AiDiagnosticScreen() {
   const sanitizeText = (text: string): string => {
     return text.replace(/\s+/g, ' ').trim();
   };
+  const validateLahanData = (data: any): boolean => {
+    return Array.isArray(data) && data.length > 0;
+  };
