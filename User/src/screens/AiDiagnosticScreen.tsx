@@ -79,3 +79,44 @@ export default function AiDiagnosticScreen() {
   const isInputInvalid = (): boolean => {
     return !selectedLahan || selectedLahan.trim() === '';
   };
+  const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
+    if (isInputInvalid()) {
+      Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan terlebih dahulu.');
+      return; 
+    }
+    if (loading) return; 
+
+    setLoading(true);
+    setAiResult(null); 
+    abortController.current = new AbortController();
+
+    try {
+      const response = await apiClient.post<AiResult>(
+        '/sensor/ai/analyze-leaf', 
+        { lahanId: selectedLahan },
+        { signal: abortController.current.signal }
+      );
+
+      if (!isMounted.current) return;
+
+      if (response.data && response.data.result && response.data.suggestion) {
+        setAiResult({
+          result: sanitizeText(response.data.result),
+          suggestion: sanitizeText(response.data.suggestion),
+          analyzedAt: response.data.analyzedAt || new Date().toLocaleString()
+        });
+      } else {
+        throw new Error('Payload corrupt');
+      }
+    } catch (error) {
+      if (!isMounted.current) return;
+      if (!axios.isCancel(error)) {
+        Alert.alert('Diagnosa Gagal', 'Sistem AI gagal memproses data sensor.');
+      }
+    } finally {
+      if (isMounted.current) {
+        setLoading(false); 
+        abortController.current = null; 
+      }
+    }
+  }, [selectedLahan, loading]);
