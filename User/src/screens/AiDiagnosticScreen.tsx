@@ -10,3 +10,4 @@ import {
 } from 'react-native';
 import axios from 'axios';
 const BACKEND_BASE_URL = 'http://10.0.2.2:3000';
+const REQUEST_TIMEOUT = 5000;
