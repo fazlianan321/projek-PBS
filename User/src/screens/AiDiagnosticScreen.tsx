@@ -76,3 +76,6 @@ export default function AiDiagnosticScreen() {
       Alert.alert('Gagal Modul', 'Koneksi ke database lahan terputus.');
     }
   }, []);
+  const isInputInvalid = (): boolean => {
+    return !selectedLahan || selectedLahan.trim() === '';
+  };
