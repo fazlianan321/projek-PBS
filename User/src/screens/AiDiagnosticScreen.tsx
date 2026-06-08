@@ -11,3 +11,8 @@ import {
 import axios from 'axios';
 const BACKEND_BASE_URL = 'http://10.0.2.2:3000';
 const REQUEST_TIMEOUT = 5000;
+const apiClient = axios.create({
+  baseURL: BACKEND_BASE_URL,
+  timeout: REQUEST_TIMEOUT,
+  headers: { 'Content-Type': 'application/json' },
+});
