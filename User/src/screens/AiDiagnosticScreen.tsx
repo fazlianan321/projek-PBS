@@ -123,3 +123,10 @@ export default function AiDiagnosticScreen() {
   useEffect(() => {
     fetchDaftarLahan();
   }, [fetchDaftarLahan]);
+  
+  const renderHeader = () => (
+    <View>
+      <Text style={styles.title}>🤖 TerraVision AI Expert</Text>
+      <Text style={styles.subtitle}>Diagnosis kesehatan daun berbasis kondisi real-time sensor lahan.</Text>
+    </View>
+  );
