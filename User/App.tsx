@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import DashboardScreen from './src/screens/DashboardScreen'; 
 import ProfileScreen from './src/screens/ProfileScreen'; 
+// 🟢 [DITAMBAHKAN]: Import layar AI yang baru kita buat
+import AiDiagnosticScreen from './src/screens/AiDiagnosticScreen'; 
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'PROFILE'>('LOGIN');
+  // 🟢 [DIUBAH]: Tambahkan 'AI_DIAGNOSTIC' ke dalam union type state
+  const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'PROFILE' | 'AI_DIAGNOSTIC'>('LOGIN');
   const [savedEmail, setSavedEmail] = useState('');
 
-  // 🟢 [DITAMBAHKAN]: State untuk menyimpan data user yang sedang login secara rill
   const [loggedInName, setLoggedInName] = useState('');
   const [loggedInEmail, setLoggedInEmail] = useState('');
 
@@ -20,14 +22,12 @@ export default function App() {
     setCurrentScreen('LOGIN');
   };
 
-  // 🟢 [DITAMBAHKAN]: Fungsi handle login yang menerima parameter nama dan email dari LoginScreen
   const handleLoginSuccess = (name: string, email: string) => {
-    setLoggedInName(name);  // Simpan nama rill hasil input login/regis
-    setLoggedInEmail(email); // Simpan email rill hasil input login/regis
+    setLoggedInName(name);  
+    setLoggedInEmail(email); 
     setCurrentScreen('DASHBOARD');
   };
 
-  // 🟢 [DITAMBAHKAN]: Fungsi handle logout untuk membersihkan session data
   const handleLogout = () => {
     setLoggedInName('');
     setLoggedInEmail('');
@@ -39,7 +39,6 @@ export default function App() {
       {/* Pengondisian Rute Dinamis */}
       {currentScreen === 'LOGIN' ? (
         <LoginScreen 
-          // 🟢 [DIUBAH]: Menerima lemparan nama & email saat login berhasil
           onLoginSuccess={handleLoginSuccess} 
           initialEmail={savedEmail}
           onNavigateToRegister={() => {
@@ -55,15 +54,29 @@ export default function App() {
         <DashboardScreen 
           onLogout={handleLogout} 
           onNavigateToProfile={() => setCurrentScreen('PROFILE')}
+          // 🟢 [DITAMBAHKAN]: Menambahkan navigasi dari Dashboard menuju layar AI
+          // (Pastikan kamu menambahkan props 'onNavigateToAi' di komponen DashboardScreen nanti)
+          onNavigateToAi={() => setCurrentScreen('AI_DIAGNOSTIC')}
         />
-      ) : (
-        // 🟢 [DIUBAH]: Sekarang ProfileScreen sukses menerima nama & email yang sinkron!
+      ) : currentScreen === 'PROFILE' ? (
         <ProfileScreen 
-          userName={loggedInName}   // Mengoper nama rill dari data login
-          userEmail={loggedInEmail} // Mengoper email rill dari data login
+          userName={loggedInName}   
+          userEmail={loggedInEmail} 
           onLogout={handleLogout} 
           onBackToDashboard={() => setCurrentScreen('DASHBOARD')} 
         />
+      ) : (
+        // 🟢 [DITAMBAHKAN]: Merender layar AI Diagnostik beserta tombol kembali ke Dashboard
+        <View style={styles.aiContainer}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setCurrentScreen('DASHBOARD')}
+          >
+            <Text style={styles.backButtonText}>← Kembali ke Dashboard</Text>
+          </TouchableOpacity>
+          
+          <AiDiagnosticScreen />
+        </View>
       )}
     </SafeAreaView>
   );
@@ -74,4 +87,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  // 🟢 [DITAMBAHKAN]: Styling khusus untuk pembungkus layar AI
+  aiContainer: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  backButton: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  backButtonText: {
+    color: '#059669',
+    fontWeight: 'bold',
+    fontSize: 14,
+  }
 });
