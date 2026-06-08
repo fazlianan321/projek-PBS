@@ -180,3 +180,19 @@ export default function AiDiagnosticScreen() {
       Silakan pilih lahan dan klik tombol di atas untuk melihat diagnosa AI.
     </Text>
   );
+    const renderAiOutcome = () => !loading && aiResult && (
+    <View style={styles.resultContainer}>
+      <View style={styles.resultHeader}>
+        <Text style={styles.badge}>HASIL DIAGNOSIS</Text>
+        <Text style={styles.timeText}>{aiResult.analyzedAt}</Text>
+      </View>
+      <Text style={styles.resultTitle}>Kesimpulan Sistem:</Text>
+      <Text style={[styles.resultValue, aiResult.result.includes('Sehat') ? styles.textGreen : styles.textAmber]}>
+        {aiResult.result}
+      </Text>
+      <View style={styles.suggestionBox}>
+        <Text style={styles.suggestionTitle}>📋 Rekomendasi Tindakan:</Text>
+        <Text style={styles.suggestionText}>{aiResult.suggestion}</Text>
+      </View>
+    </View>
+  );
