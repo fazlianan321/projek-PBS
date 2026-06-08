@@ -60,3 +60,19 @@ export default function AiDiagnosticScreen() {
   const validateLahanData = (data: any): boolean => {
     return Array.isArray(data) && data.length > 0;
   };
+  const fetchDaftarLahan = useCallback(async (): Promise<void> => {
+    try {
+      const response = await apiClient.get<Lahan[]>('/lahan');
+      if (!isMounted.current) return;
+
+      if (validateLahanData(response.data)) {
+        setDaftarLahan(response.data);
+        setSelectedLahan(response.data[0].id);
+      } else {
+        setDaftarLahan([]); 
+      }
+    } catch (error) {
+      if (!isMounted.current) return; 
+      Alert.alert('Gagal Modul', 'Koneksi ke database lahan terputus.');
+    }
+  }, []);
