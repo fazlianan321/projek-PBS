@@ -120,3 +120,6 @@ export default function AiDiagnosticScreen() {
       }
     }
   }, [selectedLahan, loading]);
+  useEffect(() => {
+    fetchDaftarLahan();
+  }, [fetchDaftarLahan]);
