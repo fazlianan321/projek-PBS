@@ -45,3 +45,4 @@ export default function AiDiagnosticScreen() {
   const [selectedLahan, setSelectedLahan] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const isMounted = useRef<boolean>(true);
