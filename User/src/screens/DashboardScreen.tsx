@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert, Image } from 'react-native'; 
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert, Image, Platform } from 'react-native'; 
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker'; 
 
@@ -23,11 +23,13 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
   // State Fitur Interaktif
   const [isPumpActive, setIsPumpActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null); 
   
   // 🟢 DITAMBAHKAN: State untuk penanda bahaya (pewarnaan dinamis)
   const [isDiseaseDetected, setIsDiseaseDetected] = useState<boolean>(false);
+
+  // 🟢 DITAMBAHKAN: State untuk notifikasi teks di bawah tombol (menggantikan Alert atas)
+  const [cameraNotification, setCameraNotification] = useState<{ type: 'success' | 'danger' | 'info'; title: string; message: string } | null>(null);
 
   // State Data Sensor Real-Time
   const [metrics, setMetrics] = useState({
@@ -37,6 +39,15 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     vegetationHealth: 'Optimal',
     lastSync: 'Menghubungkan ke server...',
   });
+
+  // Fungsi Helper untuk memunculkan Alert/Notifikasi lintas Platform (HP & Web)
+  const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      alert(`${title}\n\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
 
   const fetchRealtimeSensorData = async () => {
     try {
@@ -112,102 +123,71 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
 
       if (response.ok) {
         setIsPumpActive(newState); 
-        Alert.alert(
+        showAlert(
           "Perintah Terkirim", 
           newState ? "Pompa irigasi berhasil diaktifkan via API." : "Pompa irigasi dinonaktifkan."
         );
       } else {
-        Alert.alert("Gagal Kontrol Pompa", "Server merespon, tetapi gagal memproses perintah.");
+        showAlert("Gagal Kontrol Pompa", "Server merespon, tetapi gagal memproses perintah.");
       }
     } catch (error) {
       console.log("Error tombol irigasi:", error);
-      Alert.alert(
+      showAlert(
         "Koneksi Putus", 
         "Gagal mengirim perintah pompa. Pastikan Laptop (Server) dan HP berada di jaringan Wi-Fi yang sama!"
       );
     }
   };
 
-  // 🟢 PERBAIKAN: Langsung buka Kamera & Validasi Objek
+  // 🟢 FIXED PERBAIKAN TOTAL: Murni Hanya Kamera Tanpa Alur Upload Gambar & API AI
   const handleUploadPhoto = async () => {
-    // 1. Minta Izin Kamera
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Izin Ditolak", "Aplikasi membutuhkan akses kamera untuk memindai daun.");
-      return;
+    setCameraNotification(null); // Reset notifikasi lama tiap kali tombol ditekan
+
+    if (Platform.OS !== 'web') {
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (!cameraPermission.granted) {
+        setCameraNotification({
+          type: 'danger',
+          title: 'Izin Ditolak',
+          message: 'Aplikasi membutuhkan akses kamera langsung untuk memotret tanaman.'
+        });
+        return;
+      }
     }
 
-    // 2. Langsung Buka Kamera (Bukan Galeri)
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (result.canceled) return;
-
-    const imageUri = result.assets[0].uri;
-    setSelectedImageUri(imageUri); 
-    setIsUploading(true);
-    setAnalysisResult(null);
-
-    const formData = new FormData();
-    formData.append('lahanId', LAHAN_ID);
-
-    const filename = imageUri.split('/').pop() || 'photo.jpg';
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : `image/jpeg`;
-
-    formData.append('file', {
-      uri: imageUri,
-      name: filename,
-      type: type,
-    } as any);
-
-    const AI_API_URL = `http://${IP_LAPTOP}:3000/sensor/ai/analyze-leaf`;
-
     try {
-      const response = await fetch(AI_API_URL, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' },
-        body: formData,
+      setIsUploading(true);
+
+      // Membuka antarmuka kamera perangkat secara instan
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7, 
       });
 
-      if (response.ok) {
-        const json = await response.json();
-
-        // 3. VALIDASI OBJEK (Asumsi backend mengembalikan isPlant / isValid = false jika bukan tumbuhan)
-        if (json.isPlant === false || json.isValid === false) {
-          setAnalysisResult(null);
-          setSelectedImageUri(null); // Hapus preview karena salah objek
-          Alert.alert(
-            "🛑 Objek Tidak Valid", 
-            "Foto yang Anda ambil dideteksi bukan bagian dari tumbuhan atau lahan pertanian. Silakan coba potret ulang tanaman Anda!"
-          );
-          return;
-        }
-
-        // Jika Valid, tampilkan hasil
-        setAnalysisResult(`${json.result}\n💡 Saran: ${json.suggestion}`);
-        
-        // Cek apakah ada indikasi penyakit untuk pewarnaan dinamis
-        const textHasil = (json.result || '').toLowerCase();
-        if (textHasil.includes('sakit') || textHasil.includes('hama') || textHasil.includes('rusak') || textHasil.includes('penyakit')) {
-          setIsDiseaseDetected(true);
-        } else {
-          setIsDiseaseDetected(false);
-        }
-
-        Alert.alert("Analisis Selesai", "AI Vision berhasil mendiagnosis kondisi kesehatan daun.");
-      } else {
-        Alert.alert("Gagal Analisis", "Server AI merespon tetapi gagal memproses diagnosis gambar.");
+      if (result.canceled) {
+        setIsUploading(false);
+        return;
       }
+
+      // Berhasil mengambil gambar, simpan URI untuk pratinjau lokal
+      const imageUri = result.assets[0].uri;
+      setSelectedImageUri(imageUri); 
+
+      setCameraNotification({
+        type: 'success',
+        title: '📸 Kamera Berhasil',
+        message: 'Foto tanaman berhasil diambil dan dimuat ke pratinjau aplikasi.'
+      });
+
     } catch (error) {
-      console.log("Error AI Vision Fetching:", error);
-      Alert.alert(
-        "Koneksi Putus", 
-        "Gagal terhubung ke Server AI. Pastikan Laptop dan HP berada di jaringan Wi-Fi yang sama!"
-      );
+      console.log("Error inisialisasi modul kamera:", error);
+      setCameraNotification({
+        type: 'danger',
+        title: '⚠️ Kamera Bermasalah',
+        message: 'Gagal membuka modul kamera internal perangkat Anda.'
+      });
     } finally {
       setIsUploading(false);
     }
@@ -355,15 +335,21 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
                   {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📸 Ambil Foto Tanaman</Text>}
                 </TouchableOpacity>
 
-                {analysisResult && (
-                  // 🟢 PERBAIKAN: Kotak hasil dengan pewarnaan dinamis (Success / Danger)
-                  <View style={[styles.resultBox, isDiseaseDetected ? styles.resultBoxDanger : styles.resultBoxSuccess]}>
-                    <Text style={[styles.resultTitle, isDiseaseDetected ? styles.resultTitleDanger : styles.resultTitleSuccess]}>
-                      {isDiseaseDetected ? '⚠️ Peringatan Penyakit Tanaman:' : '✅ Hasil Deteksi AI Vision:'}
+                {/* Rendering Inline Notice Box tepat berada di bawah tombol scan */}
+                {cameraNotification && (
+                  <View style={[
+                    styles.inlineNotice, 
+                    cameraNotification.type === 'danger' ? styles.noticeDanger : 
+                    cameraNotification.type === 'success' ? styles.noticeSuccess : styles.noticeInfo
+                  ]}>
+                    <Text style={[
+                      styles.noticeTitle, 
+                      cameraNotification.type === 'danger' ? styles.noticeTitleDanger : 
+                      cameraNotification.type === 'success' ? styles.noticeTitleSuccess : styles.noticeTitleInfo
+                    ]}>
+                      {cameraNotification.title}
                     </Text>
-                    <Text style={[styles.resultText, isDiseaseDetected ? styles.resultTextDanger : styles.resultTextSuccess]}>
-                      {analysisResult}
-                    </Text>
+                    <Text style={styles.noticeMessage}>{cameraNotification.message}</Text>
                   </View>
                 )}
               </View>
@@ -430,17 +416,16 @@ const styles = StyleSheet.create({
   btnPremiumLayer: { backgroundColor: '#8b5cf6' },
   
   imagePreview: { width: '100%', height: 160, borderRadius: 10, marginBottom: 14, resizeMode: 'cover', borderWidth: 1, borderColor: '#cbd5e1' },
-  
-  // 🟢 PERBAIKAN STYLES: Penambahan gaya untuk status bahaya (merah) dan aman (biru)
-  resultBox: { marginTop: 16, padding: 12, borderRadius: 8, borderLeftWidth: 4 },
-  resultBoxSuccess: { backgroundColor: '#eff6ff', borderLeftColor: '#3b82f6' },
-  resultBoxDanger: { backgroundColor: '#fef2f2', borderLeftColor: '#ef4444' },
-  resultTitle: { fontSize: 12, fontWeight: '700' },
-  resultTitleSuccess: { color: '#1e3a8a' },
-  resultTitleDanger: { color: '#991b1b' },
-  resultText: { fontSize: 14, fontWeight: '700', marginTop: 4 },
-  resultTextSuccess: { color: '#2563eb' },
-  resultTextDanger: { color: '#dc2626' },
+
+  inlineNotice: { marginTop: 14, padding: 14, borderRadius: 10, borderWidth: 1 },
+  noticeDanger: { backgroundColor: '#fef2f2', borderColor: '#fca5a5' },
+  noticeSuccess: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+  noticeInfo: { backgroundColor: '#f0f9ff', borderColor: '#7dd3fc' },
+  noticeTitle: { fontSize: 13, fontWeight: '800', marginBottom: 3 },
+  noticeTitleDanger: { color: '#991b1b' },
+  noticeTitleSuccess: { color: '#166534' },
+  noticeTitleInfo: { color: '#0369a1' },
+  noticeMessage: { fontSize: 12, color: '#475569', lineHeight: 17, fontWeight: '500' },
   
   alertPanel: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 6, borderLeftColor: '#064e3b', marginBottom: 32 },
   alertHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
