@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert, Image } from 'react-native'; // 🟢 DITAMBAHKAN: 'Image' untuk preview foto
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert, Image } from 'react-native'; 
 import * as SecureStore from 'expo-secure-store';
-import * as ImagePicker from 'expo-image-picker'; // 🟢 DITAMBAHKAN: Library untuk akses galeri HP
+import * as ImagePicker from 'expo-image-picker'; 
 
 // 🟢 CONFIGURASI URL BACKEND (Menggunakan IP Laptop Terbaru Kamu: 192.168.1.6)
 const IP_LAPTOP = '192.168.1.6'; 
 const LAHAN_ID = 'TRV-001'; 
 const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`; 
 
-// 🟢 PERBAIKAN TIPE: Interface properti navigasi komponen dashboard
 interface DashboardProps {
   onLogout: () => void;
   onNavigateToProfile: () => void;
-  onNavigateToAi: () => void; // Navigasi ke layar TerraVision AI Expert
+  onNavigateToAi: () => void; 
 }
 
 export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavigateToAi }: DashboardProps) {
@@ -25,7 +24,10 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
   const [isPumpActive, setIsPumpActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null); // 🟢 DITAMBAHKAN: State penampung URI foto dari galeri
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null); 
+  
+  // 🟢 DITAMBAHKAN: State untuk penanda bahaya (pewarnaan dinamis)
+  const [isDiseaseDetected, setIsDiseaseDetected] = useState<boolean>(false);
 
   // State Data Sensor Real-Time
   const [metrics, setMetrics] = useState({
@@ -36,7 +38,6 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     lastSync: 'Menghubungkan ke server...',
   });
 
-  // 🟢 FUNGSI FETCH DATA ASLI DARI NESTJS (Dengan Auto-Sync Status Pompa)
   const fetchRealtimeSensorData = async () => {
     try {
       let token = null;
@@ -54,7 +55,6 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
         const result = await response.json();
         
         if (result) {
-          // Sinkronisasi lampu indikator sakelar di HP secara otomatis dari state server
           if (result.statusPompa !== undefined) {
             setIsPumpActive(result.statusPompa);
           }
@@ -78,7 +78,6 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     }
   };
 
-  // 🟢 LIVE AUTO-POLLING (Looping fetch otomatis setiap 5 detik)
   useEffect(() => {
     fetchRealtimeSensorData(); 
 
@@ -95,7 +94,6 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     setRefreshing(false);
   };
 
-  // 🟢 FUNGSI TOGGLE SAKELAR POMPA (POST KE NESTJS)
   const handleTogglePump = async () => {
     const newState = !isPumpActive;
     const PUMP_API_URL = `http://${IP_LAPTOP}:3000/sensor/pump/toggle`;
@@ -130,25 +128,29 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     }
   };
 
-  // 🟢 FUNGSI UPGRADE: REQUEST ANALISIS FOTO DAUN ASLI KE NESTJS (Sekarang Menggunakan Galeri & FormData)
+  // 🟢 PERBAIKAN: Langsung buka Kamera & Validasi Objek
   const handleUploadPhoto = async () => {
-    // 1. Buka Media Library / Galeri HP
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    // 1. Minta Izin Kamera
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Izin Ditolak", "Aplikasi membutuhkan akses kamera untuk memindai daun.");
+      return;
+    }
+
+    // 2. Langsung Buka Kamera (Bukan Galeri)
+    let result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
     });
 
-    // Jika user membatalkan pilihan foto, hentikan proses
     if (result.canceled) return;
 
     const imageUri = result.assets[0].uri;
-    setSelectedImageUri(imageUri); // Simpan URI untuk pratinjau di layar
+    setSelectedImageUri(imageUri); 
     setIsUploading(true);
     setAnalysisResult(null);
 
-    // 2. Bungkus data ke dalam FormData (Multipart Upload)
     const formData = new FormData();
     formData.append('lahanId', LAHAN_ID);
 
@@ -167,16 +169,35 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     try {
       const response = await fetch(AI_API_URL, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          // Catatan: Jangan set 'Content-Type' manual ke 'multipart/form-data', fetch akan otomatis membuat boundary-nya.
-        },
+        headers: { 'Accept': 'application/json' },
         body: formData,
       });
 
       if (response.ok) {
         const json = await response.json();
+
+        // 3. VALIDASI OBJEK (Asumsi backend mengembalikan isPlant / isValid = false jika bukan tumbuhan)
+        if (json.isPlant === false || json.isValid === false) {
+          setAnalysisResult(null);
+          setSelectedImageUri(null); // Hapus preview karena salah objek
+          Alert.alert(
+            "🛑 Objek Tidak Valid", 
+            "Foto yang Anda ambil dideteksi bukan bagian dari tumbuhan atau lahan pertanian. Silakan coba potret ulang tanaman Anda!"
+          );
+          return;
+        }
+
+        // Jika Valid, tampilkan hasil
         setAnalysisResult(`${json.result}\n💡 Saran: ${json.suggestion}`);
+        
+        // Cek apakah ada indikasi penyakit untuk pewarnaan dinamis
+        const textHasil = (json.result || '').toLowerCase();
+        if (textHasil.includes('sakit') || textHasil.includes('hama') || textHasil.includes('rusak') || textHasil.includes('penyakit')) {
+          setIsDiseaseDetected(true);
+        } else {
+          setIsDiseaseDetected(false);
+        }
+
         Alert.alert("Analisis Selesai", "AI Vision berhasil mendiagnosis kondisi kesehatan daun.");
       } else {
         Alert.alert("Gagal Analisis", "Server AI merespon tetapi gagal memproses diagnosis gambar.");
@@ -279,7 +300,7 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
           </View>
         </View>
 
-        {/* INTERACTIVE CONTROLLER ACTIONS (POMPA BERDIRI SENDIRI SEKARANG) */}
+        {/* INTERACTIVE CONTROLLER ACTIONS */}
         <Text style={styles.sectionTitle}>Tindakan & Kontrol Aktual</Text>
         <View style={styles.singleActionRow}>
           <View style={styles.fullActionCard}>
@@ -305,7 +326,7 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
           </Text>
         </View>
 
-        {/* 🟢 PUSAT AI SEKARANG TERPISAH DAN BERADA DI BAGIAN PALING BAWAH */}
+        {/* PUSAT AI */}
         <Text style={styles.sectionTitle}>Pusat Diagnosis & Kognitif AI</Text>
         <View style={styles.aiSectionContainer}>
           <View style={styles.aiCard}>
@@ -322,28 +343,32 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
             </Text>
 
             <View style={[styles.aiActionsGrid, { flexDirection: isDesktop ? 'row' : 'column' }]}>
-              {/* SUB PANEL KIRI: Fitur Scan Foto Lama (Sekarang Sudah Ditingkatkan) */}
+              {/* SUB PANEL KIRI: Fitur Kamera Langsung */}
               <View style={[styles.aiSubPanel, { width: isDesktop ? '49%' : '100%' }]}>
-                <Text style={styles.subPanelTitle}>Quick Scan (Legacy API)</Text>
+                <Text style={styles.subPanelTitle}>Quick Scan (Kamera AI)</Text>
                 
-                {/* 🟢 DITAMBAHKAN: Preview Foto Real-time Sebelum/Sesudah Terupload */}
                 {selectedImageUri && (
                   <Image source={{ uri: selectedImageUri }} style={styles.imagePreview} />
                 )}
 
                 <TouchableOpacity style={[styles.actionButton, styles.btnPrimary]} onPress={handleUploadPhoto} disabled={isUploading} activeOpacity={0.8}>
-                  {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📤 Ambil / Upload Foto</Text>}
+                  {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📸 Ambil Foto Tanaman</Text>}
                 </TouchableOpacity>
 
                 {analysisResult && (
-                  <View style={styles.resultBox}>
-                    <Text style={styles.resultTitle}>Hasil Deteksi AI Vision:</Text>
-                    <Text style={styles.resultText}>{analysisResult}</Text>
+                  // 🟢 PERBAIKAN: Kotak hasil dengan pewarnaan dinamis (Success / Danger)
+                  <View style={[styles.resultBox, isDiseaseDetected ? styles.resultBoxDanger : styles.resultBoxSuccess]}>
+                    <Text style={[styles.resultTitle, isDiseaseDetected ? styles.resultTitleDanger : styles.resultTitleSuccess]}>
+                      {isDiseaseDetected ? '⚠️ Peringatan Penyakit Tanaman:' : '✅ Hasil Deteksi AI Vision:'}
+                    </Text>
+                    <Text style={[styles.resultText, isDiseaseDetected ? styles.resultTextDanger : styles.resultTextSuccess]}>
+                      {analysisResult}
+                    </Text>
                   </View>
                 )}
               </View>
 
-              {/* SUB PANEL KANAN: Gerbang Utama ke Layar AI Expert Baru */}
+              {/* SUB PANEL KANAN */}
               <View style={[styles.aiSubPanel, { width: isDesktop ? '49%' : '100%', backgroundColor: '#faf5ff', borderColor: '#e9d5ff' }]}>
                 <Text style={styles.subPanelTitle}>Advanced System Expert</Text>
                 <TouchableOpacity style={[styles.actionButton, styles.btnPremiumLayer]} onPress={onNavigateToAi} activeOpacity={0.8}>
@@ -404,11 +429,18 @@ const styles = StyleSheet.create({
   btnPrimary: { backgroundColor: '#2563eb' },
   btnPremiumLayer: { backgroundColor: '#8b5cf6' },
   
-  // 🟢 DITAMBAHKAN: Style komponen Preview Foto
   imagePreview: { width: '100%', height: 160, borderRadius: 10, marginBottom: 14, resizeMode: 'cover', borderWidth: 1, borderColor: '#cbd5e1' },
-  resultBox: { marginTop: 16, padding: 12, backgroundColor: '#eff6ff', borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
-  resultTitle: { fontSize: 12, fontWeight: '700', color: '#1e3a8a' },
-  resultText: { fontSize: 14, fontWeight: '700', color: '#2563eb', marginTop: 4 },
+  
+  // 🟢 PERBAIKAN STYLES: Penambahan gaya untuk status bahaya (merah) dan aman (biru)
+  resultBox: { marginTop: 16, padding: 12, borderRadius: 8, borderLeftWidth: 4 },
+  resultBoxSuccess: { backgroundColor: '#eff6ff', borderLeftColor: '#3b82f6' },
+  resultBoxDanger: { backgroundColor: '#fef2f2', borderLeftColor: '#ef4444' },
+  resultTitle: { fontSize: 12, fontWeight: '700' },
+  resultTitleSuccess: { color: '#1e3a8a' },
+  resultTitleDanger: { color: '#991b1b' },
+  resultText: { fontSize: 14, fontWeight: '700', marginTop: 4 },
+  resultTextSuccess: { color: '#2563eb' },
+  resultTextDanger: { color: '#dc2626' },
   
   alertPanel: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 6, borderLeftColor: '#064e3b', marginBottom: 32 },
   alertHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
@@ -418,7 +450,6 @@ const styles = StyleSheet.create({
   boldText: { fontWeight: '700', color: '#0f172a' },
   dangerText: { fontWeight: '800', color: '#b91c1c' },
 
-  // STYLING PANEL AI YANG DIPISAHKAN KE BAWAH
   aiSectionContainer: { marginBottom: 32 },
   aiCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0' },
   aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
