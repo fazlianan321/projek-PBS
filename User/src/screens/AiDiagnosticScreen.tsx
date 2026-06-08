@@ -196,3 +196,19 @@ export default function AiDiagnosticScreen() {
       </View>
     </View>
   );
+    return (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {renderHeader()}
+      <View style={styles.card}>
+        {renderLahanSelection()}
+        {renderAttachmentBox()}
+        {renderSubmitButton()}
+      </View>
+      <View style={styles.resultCard}>
+        {renderLoadingSpinner()}
+        {renderPlaceholder()}
+        {renderAiOutcome()}
+      </View>
+    </ScrollView>
+  );
+}
