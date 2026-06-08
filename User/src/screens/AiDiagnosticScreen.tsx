@@ -157,3 +157,15 @@ export default function AiDiagnosticScreen() {
       <Text style={styles.uploadBoxText}>Citra Daun Tersemat Otomatis</Text>
     </View>
   );
+  const renderSubmitButton = () => (
+    <TouchableOpacity 
+      style={[styles.button, (loading || !selectedLahan) && styles.buttonDisabled]} 
+      onPress={handleAnalyzeLeaf}
+      disabled={loading || !selectedLahan}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.buttonText}>
+        {loading ? 'Mengalkulasi Model AI...' : 'Mulai Diagnosa Tanaman'}
+      </Text>
+    </TouchableOpacity>
+  );
