@@ -123,10 +123,31 @@ export default function AiDiagnosticScreen() {
   useEffect(() => {
     fetchDaftarLahan();
   }, [fetchDaftarLahan]);
-  
+
   const renderHeader = () => (
     <View>
       <Text style={styles.title}>🤖 TerraVision AI Expert</Text>
       <Text style={styles.subtitle}>Diagnosis kesehatan daun berbasis kondisi real-time sensor lahan.</Text>
+    </View>
+  );
+  const renderLahanSelection = () => (
+    <View>
+      <Text style={styles.label}>Zona Lahan Terpilih:</Text>
+      {daftarLahan.length === 0 ? (
+        <Text style={styles.emptyText}>Tidak ada data lahan tersedia.</Text>
+      ) : (
+        daftarLahan.map((lahan) => (
+          <TouchableOpacity 
+            key={lahan.id} 
+            style={[styles.lahanButton, selectedLahan === lahan.id && styles.lahanButtonActive]}
+            onPress={() => setSelectedLahan(lahan.id)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.lahanText, selectedLahan === lahan.id && styles.lahanTextActive]}>
+              {lahan.namaLahan} {selectedLahan === lahan.id ? '✅' : ''}
+            </Text>
+          </TouchableOpacity>
+        ))
+      )}
     </View>
   );
