@@ -2,20 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// 🟢 CONFIGURASI URL BACKEND (Sudah Menggunakan IP Kamu: 192.168.1.38)
-const IP_LAPTOP = '192.168.1.38'; 
+// 🟢 CONFIGURASI URL BACKEND (Menggunakan IP Laptop Terbaru Kamu: 192.168.1.6)
+const IP_LAPTOP = '192.168.1.6'; 
 const LAHAN_ID = 'TRV-001'; 
 const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`; 
 
-// 🟢 PERBAIKAN TIPE: Daftarkan onNavigateToProfile ke dalam properti komponen
+// 🟢 PERBAIKAN TIPE: Interface properti navigasi komponen dashboard
 interface DashboardProps {
   onLogout: () => void;
   onNavigateToProfile: () => void;
-  // 🟢 [DITAMBAHKAN]: Properti untuk navigasi ke layar AI Full
-  onNavigateToAi: () => void;
+  onNavigateToAi: () => void; // Navigasi ke layar TerraVision AI Expert
 }
 
-// 🟢 [DITAMBAHKAN]: Memanggil onNavigateToAi di parameter
 export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavigateToAi }: DashboardProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
@@ -130,7 +128,7 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     }
   };
 
-  // 🟢 REQUEST ANALISIS FOTO DAUN ASLI KE NESTJS
+  // 🟢 REQUEST ANALISIS FOTO DAUN ASLI KE NESTJS (Legacy Feature)
   const handleUploadPhoto = async () => {
     setIsUploading(true);
     setAnalysisResult(null);
@@ -185,7 +183,7 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
           <Text style={styles.brandSubtitle}>Smart Farming Integrated System</Text>
         </View>
         
-        {/* 🟢 AREA TOMBOL NAVIGASI KANAN */}
+        {/* AREA TOMBOL NAVIGASI KANAN */}
         <View style={styles.navActionsContainer}>
           <TouchableOpacity style={styles.profileButton} onPress={onNavigateToProfile} activeOpacity={0.7}>
             <Text style={styles.profileButtonText}>👤 Profil</Text>
@@ -253,47 +251,18 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
           </View>
         </View>
 
-        {/* INTERACTIVE CONTROLLER ACTIONS */}
+        {/* INTERACTIVE CONTROLLER ACTIONS (POMPA BERDIRI SENDIRI SEKARANG) */}
         <Text style={styles.sectionTitle}>Tindakan & Kontrol Aktual</Text>
-        <View style={[styles.actionContainer, { flexDirection: isDesktop ? 'row' : 'column' }]}>
-          
-          {/* PANEL KONTROL POMPA */}
-          <View style={[styles.actionCard, { width: isDesktop ? '49%' : '100%' }]}>
+        <View style={styles.singleActionRow}>
+          <View style={styles.fullActionCard}>
             <View style={styles.actionHeader}>
               <Text style={styles.actionIcon}>🚰</Text>
               <Text style={styles.actionTitle}>Irigasi Manual (Override)</Text>
             </View>
-            <Text style={styles.actionDesc}>Nyalakan sakelar pompa air digital sekarang tanpa menunggu pemicu otomatisasi sensor.</Text>
+            <Text style={styles.actionDesc}>Nyalakan sakelar pompa air digital sekarang tanpa menunggu pemicu otomatisasi sensor eksternal.</Text>
             <TouchableOpacity style={[styles.actionButton, isPumpActive ? styles.btnDanger : styles.btnSuccess]} onPress={handleTogglePump} activeOpacity={0.8}>
               <Text style={styles.actionButtonText}>{isPumpActive ? '🔴 Matikan Pompa Air' : '🟢 Nyalakan Pompa Air'}</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* PANEL UPLOAD FOTO AI */}
-          <View style={[styles.actionCard, { width: isDesktop ? '49%' : '100%' }]}>
-            <View style={styles.actionHeader}>
-              <Text style={styles.actionIcon}>📷</Text>
-              <Text style={styles.actionTitle}>Analisis Daun (AI Vision)</Text>
-            </View>
-            <Text style={styles.actionDesc}>Unggah foto morfologi daun tanaman kamu untuk mendeteksi dini infeksi hama patogen.</Text>
-            
-            {/* TOMBOL LAMA (TETAP ADA) */}
-            <TouchableOpacity style={[styles.actionButton, styles.btnPrimary]} onPress={handleUploadPhoto} disabled={isUploading} activeOpacity={0.8}>
-              {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📤 Ambil / Upload Foto</Text>}
-            </TouchableOpacity>
-
-            {/* 🟢 [DITAMBAHKAN]: TOMBOL BARU UNTUK BUKA LAYAR AI EXPERT */}
-            <TouchableOpacity style={[styles.actionButton, styles.btnPremiumLayer, { marginTop: 12 }]} onPress={onNavigateToAi} activeOpacity={0.8}>
-              <Text style={styles.actionButtonText}>🚀 Buka TerraVision AI Expert</Text>
-            </TouchableOpacity>
-
-            {/* HASIL DIAGNOSA LAMA (TETAP ADA) */}
-            {analysisResult && (
-              <View style={styles.resultBox}>
-                <Text style={styles.resultTitle}>Hasil Deteksi AI Vision:</Text>
-                <Text style={styles.resultText}>{analysisResult}</Text>
-              </View>
-            )}
           </View>
         </View>
 
@@ -306,6 +275,50 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
           <Text style={styles.alertDescription}>
             Sistem penyiraman otomatis cerdas saat ini dalam mode <Text style={styles.boldText}>Standby (Nonaktif)</Text>. Katup solenoid pompa air digital akan otomatis aktif melakukan penyiraman berdurasi 5 menit apabila rata-rata sensor kelembaban tanah mendeteksi angka di bawah <Text style={styles.dangerText}>50%</Text>.
           </Text>
+        </View>
+
+        {/* 🟢 PUSAT AI SEKARANG TERPISAH DAN BERADA DI BAGIAN PALING BAWAH */}
+        <Text style={styles.sectionTitle}>Pusat Diagnosis & Kognitif AI</Text>
+        <View style={styles.aiSectionContainer}>
+          <View style={styles.aiCard}>
+            <View style={styles.aiHeader}>
+              <Text style={styles.aiIcon}>🤖</Text>
+              <View>
+                <Text style={styles.aiTitle}>TerraVision AI Engine</Text>
+                <Text style={styles.aiSubtitle}>Computer Vision & Deteksi Penyakit Daun</Text>
+              </View>
+            </View>
+            
+            <Text style={styles.aiDesc}>
+              Gunakan kecerdasan buatan untuk mengamati struktur morfologi daun, mendeteksi patogen, klorosis, dan hama tanaman secara presisi.
+            </Text>
+
+            <View style={[styles.aiActionsGrid, { flexDirection: isDesktop ? 'row' : 'column' }]}>
+              {/* SUB PANEL KIRI: Fitur Legacy Scan Foto Lama */}
+              <View style={[styles.aiSubPanel, { width: isDesktop ? '49%' : '100%' }]}>
+                <Text style={styles.subPanelTitle}>Quick Scan (Legacy API)</Text>
+                <TouchableOpacity style={[styles.actionButton, styles.btnPrimary]} onPress={handleUploadPhoto} disabled={isUploading} activeOpacity={0.8}>
+                  {isUploading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={styles.actionButtonText}>📤 Ambil / Upload Foto</Text>}
+                </TouchableOpacity>
+
+                {analysisResult && (
+                  <View style={styles.resultBox}>
+                    <Text style={styles.resultTitle}>Hasil Deteksi AI Vision:</Text>
+                    <Text style={styles.resultText}>{analysisResult}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* SUB PANEL KANAN: Gerbang Utama ke Layar AI Expert Baru */}
+              <View style={[styles.aiSubPanel, { width: isDesktop ? '49%' : '100%', backgroundColor: '#faf5ff', borderColor: '#e9d5ff' }]}>
+                <Text style={styles.subPanelTitle}>Advanced System Expert</Text>
+                <TouchableOpacity style={[styles.actionButton, styles.btnPremiumLayer]} onPress={onNavigateToAi} activeOpacity={0.8}>
+                  <Text style={styles.actionButtonText}>🚀 Buka TerraVision AI Expert</Text>
+                </TouchableOpacity>
+                <Text style={styles.aiHighlightHint}>Direkomendasikan: Navigasi ke modul konsultasi sistem pakar dengan batasan 25 parameter ketat.</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
       </ScrollView>
@@ -342,9 +355,10 @@ const styles = StyleSheet.create({
   statusBadge: { alignSelf: 'flex-start', fontSize: 11, fontWeight: '800', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 30 },
   badgeSuccess: { backgroundColor: '#d1fae5', color: '#065f46' },
   badgePremium: { backgroundColor: '#ecfdf5', color: '#047857', borderWidth: 1, borderColor: '#a7f3d0' },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 16, marginTop: 8 },
-  actionContainer: { justifyContent: 'space-between', gap: 16, marginBottom: 32 },
-  actionCard: { backgroundColor: '#ffffff', borderRadius: 18, padding: 24, borderWidth: 1, borderColor: '#e2e8f0' },
+  
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 16, marginTop: 12 },
+  singleActionRow: { marginBottom: 24 },
+  fullActionCard: { backgroundColor: '#ffffff', borderRadius: 18, padding: 24, borderWidth: 1, borderColor: '#e2e8f0' },
   actionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   actionIcon: { fontSize: 22 },
   actionTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
@@ -354,15 +368,30 @@ const styles = StyleSheet.create({
   btnSuccess: { backgroundColor: '#059669' },
   btnDanger: { backgroundColor: '#dc2626' },
   btnPrimary: { backgroundColor: '#2563eb' },
-  btnPremiumLayer: { backgroundColor: '#8b5cf6' }, // 🟢 [DITAMBAHKAN]: Warna ungu untuk tombol AI Expert
+  btnPremiumLayer: { backgroundColor: '#8b5cf6' },
+  
   resultBox: { marginTop: 16, padding: 12, backgroundColor: '#eff6ff', borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
   resultTitle: { fontSize: 12, fontWeight: '700', color: '#1e3a8a' },
   resultText: { fontSize: 14, fontWeight: '700', color: '#2563eb', marginTop: 4 },
-  alertPanel: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 6, borderLeftColor: '#064e3b' },
+  
+  alertPanel: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 6, borderLeftColor: '#064e3b', marginBottom: 32 },
   alertHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   alertTitleIcon: { fontSize: 18 },
   alertTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
   alertDescription: { fontSize: 14, color: '#475569', lineHeight: 24 },
   boldText: { fontWeight: '700', color: '#0f172a' },
   dangerText: { fontWeight: '800', color: '#b91c1c' },
+
+  // STYLING PANEL AI YANG DIPISAHKAN KE BAWAH
+  aiSectionContainer: { marginBottom: 32 },
+  aiCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: '#e2e8f0' },
+  aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  aiIcon: { fontSize: 28 },
+  aiTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+  aiSubtitle: { fontSize: 12, color: '#64748b', fontWeight: '500' },
+  aiDesc: { fontSize: 13, color: '#475569', lineHeight: 20, marginBottom: 20 },
+  aiActionsGrid: { justifyContent: 'space-between', gap: 16 },
+  aiSubPanel: { padding: 18, borderRadius: 14, borderWidth: 1, borderColor: '#f1f5f9', backgroundColor: '#f8fafc', justifyContent: 'center' },
+  subPanelTitle: { fontSize: 13, fontWeight: '800', color: '#334155', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  aiHighlightHint: { fontSize: 11, color: '#6b21a8', marginTop: 10, lineHeight: 16, fontWeight: '500' }
 });
