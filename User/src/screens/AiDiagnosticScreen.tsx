@@ -169,3 +169,9 @@ export default function AiDiagnosticScreen() {
       </Text>
     </TouchableOpacity>
   );
+  const renderLoadingSpinner = () => loading && (
+    <View style={styles.center}>
+      <ActivityIndicator size="large" color="#059669" />
+      <Text style={styles.loadingText}>Membaca parameter database & klorofil...</Text>
+    </View>
+  );
