@@ -151,3 +151,9 @@ export default function AiDiagnosticScreen() {
       )}
     </View>
   );
+  const renderAttachmentBox = () => (
+    <View style={styles.uploadBox}>
+      <Text style={styles.leafIcon}>🍃</Text>
+      <Text style={styles.uploadBoxText}>Citra Daun Tersemat Otomatis</Text>
+    </View>
+  );
