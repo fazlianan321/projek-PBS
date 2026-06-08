@@ -47,3 +47,10 @@ export default function AiDiagnosticScreen() {
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
   const isMounted = useRef<boolean>(true);
   const abortController = useRef<AbortController | null>(null);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      if (abortController.current) abortController.current.abort();
+    };
+  }, []);
