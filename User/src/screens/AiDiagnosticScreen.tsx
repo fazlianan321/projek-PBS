@@ -28,3 +28,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => Promise.reject(error)
 );
+
+interface Lahan { 
+  id: string; 
+  namaLahan: string; 
+}
