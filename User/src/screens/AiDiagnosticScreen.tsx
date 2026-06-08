@@ -54,3 +54,6 @@ export default function AiDiagnosticScreen() {
       if (abortController.current) abortController.current.abort();
     };
   }, []);
+  const sanitizeText = (text: string): string => {
+    return text.replace(/\s+/g, ' ').trim();
+  };
