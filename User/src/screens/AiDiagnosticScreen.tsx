@@ -175,3 +175,8 @@ export default function AiDiagnosticScreen() {
       <Text style={styles.loadingText}>Membaca parameter database & klorofil...</Text>
     </View>
   );
+  const renderPlaceholder = () => !loading && !aiResult && (
+    <Text style={styles.placeholderText}>
+      Silakan pilih lahan dan klik tombol di atas untuk melihat diagnosa AI.
+    </Text>
+  );
