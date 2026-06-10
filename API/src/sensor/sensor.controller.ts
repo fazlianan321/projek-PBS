@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { 
+  Controller, 
+  Post, 
+  Body, 
+  Get, 
+  Param, 
+  UseInterceptors, 
+  UploadedFile, 
+  BadRequestException 
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { SensorService } from './sensor.service';
 
 @Controller('sensor')
@@ -79,10 +89,22 @@ export class SensorController {
     };
   }
 
-  // 🟢 ENDPOINT BARU: Simulasi AI Vision Diagnosa Kesehatan Daun secara Kontekstual
+  // 🟢 PERBAIKAN UTAMA: Sekarang mendukung parsing multipart-formdata (File + Text Body)
   @Post('ai/analyze-leaf')
-  async analyzeLeaf(@Body() data: { lahanId: string }) {
-    console.log(`[🤖 AI VISION] Memproses analisis foto daun untuk Lahan: ${data.lahanId}`);
+  @UseInterceptors(FileInterceptor('file')) // 👈 Menangkap file gambar dengan key 'file' dari React Native
+  async analyzeLeaf(
+    @UploadedFile() file: Express.Multer.File, // 👈 Menerima biner gambar daun
+    @Body() data: { lahanId: string } // 👈 Menerima teks lahanId dari FormData secara aman
+  ) {
+    // Guard Clause: Mencegah crash jika salah satu data dikirim kosong oleh client
+    if (!data || !data.lahanId) {
+      throw new BadRequestException('Data text body (lahanId) tidak ditemukan.');
+    }
+    if (!file) {
+      throw new BadRequestException('Data file biner (file gambar daun) tidak ditemukan.');
+    }
+
+    console.log(`[🤖 AI VISION] Memproses analisis foto daun "${file.originalname}" untuk Lahan: ${data.lahanId}`);
 
     // Ambil data kelembapan terakhir dari database untuk menghasilkan diagnosis yang realistis
     const dataTerakhir = await this.sensorService.getLatestData(data.lahanId);
