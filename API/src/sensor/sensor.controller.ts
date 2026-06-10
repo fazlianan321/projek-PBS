@@ -11,11 +11,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SensorService } from './sensor.service';
 
-// 🟢 KODE BARU: Import SDK Google Gen AI
+// 🟢 PERBAIKAN: Import dotenv agar NestJS bisa membaca file .env secara langsung
+import 'dotenv/config'; 
 import { GoogleGenAI } from '@google/genai';
 
-// 🟢 KODE BARU: Inisialisasi API Gemini dengan Key Asli
-const ai = new GoogleGenAI({ apiKey: 'AQ.Ab8RN6L2jyaU4AFCachNvVE4RFXm1U0cqSfU8ZiOd6hjuILMZQ' });
+// 🟢 PERBAIKAN SELESAI: Mengambil API Key dari .env (Aman dari GitHub Push Protection)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 @Controller('sensor')
 export class SensorController {
