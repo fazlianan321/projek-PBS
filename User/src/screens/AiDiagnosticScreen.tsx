@@ -24,7 +24,6 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  // Guard interceptor hanya memeriksa data jika bukan bertipe FormData
   if (config.data && !(config.data instanceof FormData) && JSON.stringify(config.data).length > 10000) {
     throw new Error('Payload melampaui batas aman.');
   }
@@ -52,8 +51,6 @@ export default function AiDiagnosticScreen() {
   const [selectedLahan, setSelectedLahan] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
-  
-  // 🟢 STATE BARU: Menyimpan URI lokal foto daun dari modul kamera
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 
   const isMounted = useRef<boolean>(true);
@@ -92,7 +89,6 @@ export default function AiDiagnosticScreen() {
     }
   }, []);
 
-  // 🟢 FUNGSI BARU: Mengaktifkan Kamera Perangkat
   const handleCaptureLeaf = async () => {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -111,7 +107,7 @@ export default function AiDiagnosticScreen() {
 
       if (!result.canceled && result.assets[0]) {
         setSelectedImageUri(result.assets[0].uri);
-        setAiResult(null); // Reset hasil kalkulasi lama jika memotret ulang
+        setAiResult(null); 
       }
     } catch (err) {
       Alert.alert('Error Kamera', 'Gagal memuat modul kamera internal perangkat.');
@@ -122,11 +118,15 @@ export default function AiDiagnosticScreen() {
     return !selectedLahan || selectedLahan.trim() === '' || !selectedImageUri;
   };
 
-  // 🟢 REFACTOR: Pengiriman Data Lahan + File Gambar Biner Menggunakan FormData
   const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
-    if (isInputInvalid()) {
-      Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan dan ambil foto daun terlebih dahulu.');
-      return; 
+    // 🟢 PERBAIKAN 1: Jangan biarkan fungsi keluar secara bisu. Berikan instruksi jika data kosong.
+    if (!selectedLahan || selectedLahan.trim() === '') {
+      Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan terlebih dahulu.');
+      return;
+    }
+    if (!selectedImageUri) {
+      Alert.alert('Peringatan Sistem', 'Foto daun belum diambil. Silakan klik kotak kamera di atas.');
+      return;
     }
     if (loading) return; 
 
@@ -134,16 +134,23 @@ export default function AiDiagnosticScreen() {
     setAiResult(null); 
     abortController.current = new AbortController();
 
+    // 🟢 PERBAIKAN 2: Mengembalikan fungsi Timeout 5 detik untuk native fetch agar tidak gantung/freeze
+    const timeoutId = setTimeout(() => {
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+    }, REQUEST_TIMEOUT);
+
     try {
       const formData = new FormData();
       formData.append('lahanId', selectedLahan);
 
-      const filename = selectedImageUri!.split('/').pop() || 'leaf.jpg';
+      const filename = selectedImageUri.split('/').pop() || 'leaf.jpg';
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : `image/jpeg`;
 
       if (Platform.OS === 'web') {
-        const responseBlob = await fetch(selectedImageUri!);
+        const responseBlob = await fetch(selectedImageUri);
         const blob = await responseBlob.blob();
         formData.append('file', blob, filename);
       } else {
@@ -154,7 +161,6 @@ export default function AiDiagnosticScreen() {
         } as any);
       }
 
-      // Menggunakan fetch murni untuk mempermudah transfer data multipart-form data melewati stream abort controller
       const response = await fetch(`${BACKEND_BASE_URL}/sensor/ai/analyze-leaf`, {
         method: 'POST',
         body: formData,
@@ -164,10 +170,13 @@ export default function AiDiagnosticScreen() {
         signal: abortController.current.signal,
       });
 
+      clearTimeout(timeoutId); // Bersihkan timeout jika server merespon tepat waktu
+
       if (!isMounted.current) return;
 
       if (!response.ok) {
-        throw new Error('Server AI mengembalikan respon kegagalan.');
+        const textError = await response.text().catch(() => "Unknown Server Error");
+        throw new Error(`HTTP Error ${response.status}: ${textError}`);
       }
 
       const responseData = await response.json();
@@ -179,12 +188,17 @@ export default function AiDiagnosticScreen() {
           analyzedAt: responseData.analyzedAt || new Date().toLocaleString()
         });
       } else {
-        throw new Error('Payload corrupt');
+        throw new Error('Payload corrupt atau struktur response salah.');
       }
     } catch (error: any) {
+      clearTimeout(timeoutId);
       if (!isMounted.current) return;
-      if (error.name !== 'AbortError') {
-        Alert.alert('Diagnosa Gagal', 'Sistem AI gagal memproses gambar sampel daun dari lapangan.');
+      
+      // 🟢 PERBAIKAN 3: Memunculkan pesan error spesifik (termasuk jika rute IP salah atau RTO)
+      if (error.name === 'AbortError') {
+        Alert.alert('Koneksi Terputus', 'Batas waktu habis (Timeout). Pastikan IP backend benar dan server aktif.');
+      } else {
+        Alert.alert('Diagnosa Gagal', error.message || 'Sistem AI gagal memproses data.');
       }
     } finally {
       if (isMounted.current) {
@@ -227,7 +241,6 @@ export default function AiDiagnosticScreen() {
     </View>
   );
 
-  // 🟢 UPGRADE: Box interaktif yang mendeteksi ada/tidaknya pratinjau gambar tanaman
   const renderAttachmentBox = () => (
     <TouchableOpacity style={styles.uploadBox} onPress={handleCaptureLeaf} activeOpacity={0.8}>
       {selectedImageUri ? (
@@ -246,9 +259,10 @@ export default function AiDiagnosticScreen() {
 
   const renderSubmitButton = () => (
     <TouchableOpacity 
-      style={[styles.button, (loading || isInputInvalid()) && styles.buttonDisabled]} 
+      // 🟢 PERBAIKAN 4: Jangan kunci tombol di UI agar pengguna tahu bagian mana yang belum terisi
+      style={[styles.button, loading && styles.buttonDisabled]} 
       onPress={handleAnalyzeLeaf}
-      disabled={loading || isInputInvalid()}
+      disabled={loading} 
       activeOpacity={0.8}
     >
       <Text style={styles.buttonText}>
