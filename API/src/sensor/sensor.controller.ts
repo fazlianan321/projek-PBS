@@ -153,6 +153,11 @@ export class SensorController {
         contents: [promptSistem, imagePart],
       });
 
+      // 🟢 PERBAIKAN TYPESCRIPT: Pastikan response.text benar-benar ada sebelum dipotong
+      if (!response.text) {
+        throw new Error('Gemini merespon tanpa teks.');
+      }
+
       const aiResult = JSON.parse(response.text.trim());
       
       // Jika AI Cloud berhasil, timpa variabel diagnosis lama dengan hasil AI Cloud
