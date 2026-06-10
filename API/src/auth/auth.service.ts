@@ -63,7 +63,7 @@ export class AuthService {
     };
   } 
 
-  // 🔴 TAMBAHAN BARU: Mengambil seluruh data user untuk kebutuhan Admin CMS
+  // 🔴 PERBAIKAN: Hanya mengambil field yang dijamin valid dan ada di model skema User Prisma Anda
   async findAllUsers() {
     return await this.prisma.user.findMany({
       select: {
@@ -71,8 +71,6 @@ export class AuthService {
         nama: true,
         email: true,
         role: true,
-        status: true,
-        createdAt: true, // Ambil field tanggal register jika ada di skema Prisma kamu
       },
     });
   }
