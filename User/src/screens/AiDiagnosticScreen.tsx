@@ -6,11 +6,17 @@ import {
   ScrollView, 
   TouchableOpacity, 
   ActivityIndicator, 
-  Alert 
+  Alert,
+  Image,
+  Platform
 } from 'react-native';
-import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-const BACKEND_BASE_URL = 'http://10.0.2.2:3000';
+import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
+
+// 🟢 PERBAIKAN KONEKSI: Sesuaikan IP ini dengan IP Localhost Laptopmu saat ini (Contoh: 192.168.1.6)
+const BACKEND_BASE_URL = 'http://192.168.1.6:3000';
 const REQUEST_TIMEOUT = 5000;
+
 const apiClient = axios.create({
   baseURL: BACKEND_BASE_URL,
   timeout: REQUEST_TIMEOUT,
@@ -18,7 +24,8 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  if (config.data && JSON.stringify(config.data).length > 10000) {
+  // Guard interceptor hanya memeriksa data jika bukan bertipe FormData
+  if (config.data && !(config.data instanceof FormData) && JSON.stringify(config.data).length > 10000) {
     throw new Error('Payload melampaui batas aman.');
   }
   return config;
@@ -45,8 +52,13 @@ export default function AiDiagnosticScreen() {
   const [selectedLahan, setSelectedLahan] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  
+  // 🟢 STATE BARU: Menyimpan URI lokal foto daun dari modul kamera
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+
   const isMounted = useRef<boolean>(true);
   const abortController = useRef<AbortController | null>(null);
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -54,12 +66,15 @@ export default function AiDiagnosticScreen() {
       if (abortController.current) abortController.current.abort();
     };
   }, []);
+
   const sanitizeText = (text: string): string => {
     return text.replace(/\s+/g, ' ').trim();
   };
+
   const validateLahanData = (data: any): boolean => {
     return Array.isArray(data) && data.length > 0;
   };
+
   const fetchDaftarLahan = useCallback(async (): Promise<void> => {
     try {
       const response = await apiClient.get<Lahan[]>('/lahan');
@@ -73,15 +88,44 @@ export default function AiDiagnosticScreen() {
       }
     } catch (error) {
       if (!isMounted.current) return; 
-      Alert.alert('Gagal Modul', 'Koneksi ke database lahan terputus.');
+      Alert.alert('Gagal Modul', 'Koneksi ke database lahan terputus. Pastikan server NestJS aktif.');
     }
   }, []);
-  const isInputInvalid = (): boolean => {
-    return !selectedLahan || selectedLahan.trim() === '';
+
+  // 🟢 FUNGSI BARU: Mengaktifkan Kamera Perangkat
+  const handleCaptureLeaf = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Izin Ditolak', 'Sistem memerlukan akses kamera untuk mengambil sampel daun.');
+        return;
+      }
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImageUri(result.assets[0].uri);
+        setAiResult(null); // Reset hasil kalkulasi lama jika memotret ulang
+      }
+    } catch (err) {
+      Alert.alert('Error Kamera', 'Gagal memuat modul kamera internal perangkat.');
+    }
   };
+
+  const isInputInvalid = (): boolean => {
+    return !selectedLahan || selectedLahan.trim() === '' || !selectedImageUri;
+  };
+
+  // 🟢 REFACTOR: Pengiriman Data Lahan + File Gambar Biner Menggunakan FormData
   const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
     if (isInputInvalid()) {
-      Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan terlebih dahulu.');
+      Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan dan ambil foto daun terlebih dahulu.');
       return; 
     }
     if (loading) return; 
@@ -91,27 +135,56 @@ export default function AiDiagnosticScreen() {
     abortController.current = new AbortController();
 
     try {
-      const response = await apiClient.post<AiResult>(
-        '/sensor/ai/analyze-leaf', 
-        { lahanId: selectedLahan },
-        { signal: abortController.current.signal }
-      );
+      const formData = new FormData();
+      formData.append('lahanId', selectedLahan);
+
+      const filename = selectedImageUri!.split('/').pop() || 'leaf.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      if (Platform.OS === 'web') {
+        const responseBlob = await fetch(selectedImageUri!);
+        const blob = await responseBlob.blob();
+        formData.append('file', blob, filename);
+      } else {
+        formData.append('file', {
+          uri: selectedImageUri,
+          name: filename,
+          type: type,
+        } as any);
+      }
+
+      // Menggunakan fetch murni untuk mempermudah transfer data multipart-form data melewati stream abort controller
+      const response = await fetch(`${BACKEND_BASE_URL}/sensor/ai/analyze-leaf`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: abortController.current.signal,
+      });
 
       if (!isMounted.current) return;
 
-      if (response.data && response.data.result && response.data.suggestion) {
+      if (!response.ok) {
+        throw new Error('Server AI mengembalikan respon kegagalan.');
+      }
+
+      const responseData = await response.json();
+
+      if (responseData && responseData.result && responseData.suggestion) {
         setAiResult({
-          result: sanitizeText(response.data.result),
-          suggestion: sanitizeText(response.data.suggestion),
-          analyzedAt: response.data.analyzedAt || new Date().toLocaleString()
+          result: sanitizeText(responseData.result),
+          suggestion: sanitizeText(responseData.suggestion),
+          analyzedAt: responseData.analyzedAt || new Date().toLocaleString()
         });
       } else {
         throw new Error('Payload corrupt');
       }
-    } catch (error) {
+    } catch (error: any) {
       if (!isMounted.current) return;
-      if (!axios.isCancel(error)) {
-        Alert.alert('Diagnosa Gagal', 'Sistem AI gagal memproses data sensor.');
+      if (error.name !== 'AbortError') {
+        Alert.alert('Diagnosa Gagal', 'Sistem AI gagal memproses gambar sampel daun dari lapangan.');
       }
     } finally {
       if (isMounted.current) {
@@ -119,7 +192,8 @@ export default function AiDiagnosticScreen() {
         abortController.current = null; 
       }
     }
-  }, [selectedLahan, loading]);
+  }, [selectedLahan, selectedImageUri, loading]);
+
   useEffect(() => {
     fetchDaftarLahan();
   }, [fetchDaftarLahan]);
@@ -130,6 +204,7 @@ export default function AiDiagnosticScreen() {
       <Text style={styles.subtitle}>Diagnosis kesehatan daun berbasis kondisi real-time sensor lahan.</Text>
     </View>
   );
+
   const renderLahanSelection = () => (
     <View>
       <Text style={styles.label}>Zona Lahan Terpilih:</Text>
@@ -151,17 +226,29 @@ export default function AiDiagnosticScreen() {
       )}
     </View>
   );
+
+  // 🟢 UPGRADE: Box interaktif yang mendeteksi ada/tidaknya pratinjau gambar tanaman
   const renderAttachmentBox = () => (
-    <View style={styles.uploadBox}>
-      <Text style={styles.leafIcon}>🍃</Text>
-      <Text style={styles.uploadBoxText}>Citra Daun Tersemat Otomatis</Text>
-    </View>
+    <TouchableOpacity style={styles.uploadBox} onPress={handleCaptureLeaf} activeOpacity={0.8}>
+      {selectedImageUri ? (
+        <View style={styles.previewContainer}>
+          <Image source={{ uri: selectedImageUri }} style={styles.imagePreview} />
+          <Text style={styles.uploadBoxTextUpdate}>🔄 Ketuk untuk Mengambil Ulang Gambar</Text>
+        </View>
+      ) : (
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.leafIcon}>📸</Text>
+          <Text style={styles.uploadBoxText}>Ketuk untuk Mengambil Citra Sampel Daun</Text>
+        </View>
+      )}
+    </TouchableOpacity>
   );
+
   const renderSubmitButton = () => (
     <TouchableOpacity 
-      style={[styles.button, (loading || !selectedLahan) && styles.buttonDisabled]} 
+      style={[styles.button, (loading || isInputInvalid()) && styles.buttonDisabled]} 
       onPress={handleAnalyzeLeaf}
-      disabled={loading || !selectedLahan}
+      disabled={loading || isInputInvalid()}
       activeOpacity={0.8}
     >
       <Text style={styles.buttonText}>
@@ -169,25 +256,28 @@ export default function AiDiagnosticScreen() {
       </Text>
     </TouchableOpacity>
   );
+
   const renderLoadingSpinner = () => loading && (
     <View style={styles.center}>
       <ActivityIndicator size="large" color="#059669" />
       <Text style={styles.loadingText}>Membaca parameter database & klorofil...</Text>
     </View>
   );
+
   const renderPlaceholder = () => !loading && !aiResult && (
     <Text style={styles.placeholderText}>
-      Silakan pilih lahan dan klik tombol di atas untuk melihat diagnosa AI.
+      Silakan pilih lahan dan potret daun melalui tombol di atas untuk memuat analisis pakar cerdas AI.
     </Text>
   );
-    const renderAiOutcome = () => !loading && aiResult && (
+
+  const renderAiOutcome = () => !loading && aiResult && (
     <View style={styles.resultContainer}>
       <View style={styles.resultHeader}>
         <Text style={styles.badge}>HASIL DIAGNOSIS</Text>
         <Text style={styles.timeText}>{aiResult.analyzedAt}</Text>
       </View>
       <Text style={styles.resultTitle}>Kesimpulan Sistem:</Text>
-      <Text style={[styles.resultValue, aiResult.result.includes('Sehat') ? styles.textGreen : styles.textAmber]}>
+      <Text style={[styles.resultValue, aiResult.result.toLowerCase().includes('sehat') ? styles.textGreen : styles.textAmber]}>
         {aiResult.result}
       </Text>
       <View style={styles.suggestionBox}>
@@ -196,7 +286,8 @@ export default function AiDiagnosticScreen() {
       </View>
     </View>
   );
-    return (
+
+  return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {renderHeader()}
       <View style={styles.card}>
@@ -212,6 +303,7 @@ export default function AiDiagnosticScreen() {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb', padding: 16 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#1f2937', marginBottom: 4 },
@@ -226,6 +318,9 @@ const styles = StyleSheet.create({
   leafIcon: { fontSize: 36, textAlign: 'center' },
   uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#a7f3d0', backgroundColor: '#f0fdf4', borderRadius: 10, padding: 18, alignItems: 'center', marginVertical: 12 },
   uploadBoxText: { fontSize: 12, color: '#047857', fontWeight: '600', marginTop: 6 },
+  uploadBoxTextUpdate: { fontSize: 11, color: '#047857', fontWeight: '700', marginTop: 6 },
+  previewContainer: { width: '100%', alignItems: 'center' },
+  imagePreview: { width: '100%', height: 150, borderRadius: 8, resizeMode: 'cover' },
   button: { backgroundColor: '#059669', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 6, shadowColor: '#059669', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
   buttonDisabled: { backgroundColor: '#9ca3af', shadowOpacity: 0, elevation: 0 },
   buttonText: { color: '#ffffff', fontWeight: 'bold', fontSize: 15 },
