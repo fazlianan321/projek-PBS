@@ -89,11 +89,12 @@ export class SensorController {
     };
   }
 
-  // 🟢 PERBAIKAN UTAMA: Sekarang mendukung parsing multipart-formdata (File + Text Body)
+  // 🟢 PERBAIKAN SELESAI: Menggunakan bentuk inline-object yang aman dari error TS2694 Namespace Multer
   @Post('ai/analyze-leaf')
   @UseInterceptors(FileInterceptor('file')) // 👈 Menangkap file gambar dengan key 'file' dari React Native
   async analyzeLeaf(
-    @UploadedFile() file: Express.Multer.File, // 👈 Menerima biner gambar daun
+    // 💾 Diubah menjadi struktur objek literal agar lolos kompilasi NodeNext secara modular
+    @UploadedFile() file: { originalname: string; mimetype: string; buffer: Buffer; size: number },
     @Body() data: { lahanId: string } // 👈 Menerima teks lahanId dari FormData secara aman
   ) {
     // Guard Clause: Mencegah crash jika salah satu data dikirim kosong oleh client
