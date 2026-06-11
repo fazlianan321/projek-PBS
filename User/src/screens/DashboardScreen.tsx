@@ -3,7 +3,6 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensio
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker'; 
 
-// 🟢 CONFIGURASI URL BACKEND (Menggunakan IP Laptop Terbaru Kamu: 192.168.1.6)
 const IP_LAPTOP = '192.168.1.6'; 
 const LAHAN_ID = 'TRV-001'; 
 const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`; 
@@ -25,14 +24,8 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
   const [isUploading, setIsUploading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null); 
-  
-  // 🟢 DITAMBAHKAN: State untuk penanda bahaya (pewarnaan dinamis)
   const [isDiseaseDetected, setIsDiseaseDetected] = useState<boolean>(false);
-
-  // 🟢 DITAMBAHKAN: State untuk notifikasi teks di bawah tombol (menggantikan Alert atas)
   const [cameraNotification, setCameraNotification] = useState<{ type: 'success' | 'danger' | 'info'; title: string; message: string } | null>(null);
-
-  // State Data Sensor Real-Time
   const [metrics, setMetrics] = useState({
     soilMoisture: '--%',
     temperature: '--°C',
@@ -41,7 +34,6 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     lastSync: 'Menghubungkan ke server...',
   });
 
-  // Fungsi Helper untuk memunculkan Alert/Notifikasi lintas Platform (HP & Web)
   const showAlert = (title: string, message: string) => {
     if (Platform.OS === 'web') {
       alert(`${title}\n\n${message}`);
@@ -140,12 +132,10 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     }
   };
 
-  // 🟢 PERBAIKAN: Langsung buka Kamera & Notifikasi Teks Render di Bawah Tombol
   const handleUploadPhoto = async () => {
-    setCameraNotification(null); // Reset notifikasi lama tiap kali scan baru dimulai
+    setCameraNotification(null);
 
     if (Platform.OS !== 'web') {
-      // Hapus requestMediaLibraryPermissionsAsync agar tidak minta akses galeri
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
       
       if (!cameraPermission.granted) {
@@ -159,11 +149,10 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
     }
 
     try {
-      // Langsung memicu kamera internal HP tanpa alur tambahan
       let result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.7, // Dioptimalkan ke 0.7 agar alokasi memori heap internal perangkat tidak kehabisan daya
+        quality: 0.7, 
       });
 
       if (result.canceled) return;
@@ -202,11 +191,9 @@ export default function DashboardScreen({ onLogout, onNavigateToProfile, onNavig
 
       if (response.ok) {
         const json = await response.json();
-
-        // VALIDASI OBJEK (Notifikasi dialihkan ke bawah tombol)
         if (json.isPlant === false || json.isValid === false) {
           setAnalysisResult(null);
-          setSelectedImageUri(null); // Hapus preview karena salah objek
+          setSelectedImageUri(null); 
           setCameraNotification({
             type: 'danger',
             title: '🛑 Objek Tidak Valid',

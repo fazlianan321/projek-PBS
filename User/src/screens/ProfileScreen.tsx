@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator, Alert, Platform, Modal, TextInput } from 'react-native';
-// Import Date Picker resmi Expo
 import DateTimePicker from '@react-native-community/datetimepicker';
-// 🟢 [DITAMBAHKAN]: Import AsyncStorage untuk mekanisme persistence data lokal
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ProfileProps {
-  userName: string;  // Data nama dinamis dari user yang sedang login
-  userEmail: string; // Data email dinamis dari user yang sedang login
+  userName: string;  
+  userEmail: string; 
   onLogout: () => void;
   onBackToDashboard: () => void; 
 }
@@ -15,26 +13,17 @@ interface ProfileProps {
 export default function ProfileScreen({ userName, userEmail, onLogout, onBackToDashboard }: ProfileProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
-  
-  // 🟢 [DIUBAH]: Default loading diubah menjadi true untuk menunggu pengecekan storage lokal selesai
   const [loading, setLoading] = useState(true);
-
-  // Status Verifikasi Dinamis
   const [isVerified, setIsVerified] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-
-  // State Penampung Form Identitas
   const [inputPhone, setInputPhone] = useState('');
   const [birthDate, setBirthDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isDateSelected, setIsDateSelected] = useState(false);
-
-  // 🔐 STATE MANAJEMEN ALUR OTP (One-Time Password)
   const [otpStep, setOtpStep] = useState<'INPUT_DATA' | 'INPUT_OTP'>('INPUT_DATA');
   const [inputOtp, setInputOtp] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState(''); // Tempat menyimpan OTP simulasi
-  const [timer, setTimer] = useState(60); // Hitung mundur dalam detik
-
+  const [generatedOtp, setGeneratedOtp] = useState(''); 
+  const [timer, setTimer] = useState(60); 
   const [userData, setUserData] = useState({
     role: 'Pemilik Lahan (Master Admin)',
     phone: '', 
@@ -44,7 +33,6 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     lokasi: 'Bandar Lampung, Indonesia'
   });
 
-  // 🟢 [DITAMBAHKAN]: Memuat data dari AsyncStorage secara asinkron saat layar diakses pertama kali
   useEffect(() => {
     const loadPersistedData = async () => {
       try {
@@ -70,7 +58,6 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     }
   }, [userEmail]);
 
-  // Efek samping untuk menangani jalannya hitung mundur (countdown) timer OTP
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (otpStep === 'INPUT_OTP' && timer > 0) {
@@ -81,27 +68,23 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     return () => clearInterval(interval);
   }, [otpStep, timer]);
 
-  // Fungsi membuka pop-up Modal Verifikasi
   const handleRequestVerification = () => {
     if (isVerified) {
       const msg = "Informasi Akun: Akun petani Anda sudah berstatus aktif dan terverifikasi.";
       Platform.OS === 'web' ? alert(msg) : Alert.alert("Informasi Akun", msg);
       return;
     }
-    
-    // Reset kondisi form ke awal saat modal dibuka kembali
+  
     setOtpStep('INPUT_DATA');
     setInputOtp('');
     setTimer(60);
     setIsModalVisible(true);
   };
 
-  // Fungsi formatting objek tanggal ke string bahasa Indonesia
   const formatIndonesianDate = (date: Date) => {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
-  // Handler kalender pop-up di Android/iOS
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios'); 
     if (selectedDate) {
@@ -110,7 +93,6 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
     }
   };
 
-  // 🔐 LANGKAH 1: Validasi form identitas awal & Picu Pengiriman OTP via WA
   const handleRequestOtp = () => {
     if (!inputPhone.trim() || !isDateSelected) {
       const alertMsg = "Data Tidak Lengkap: Silakan isi Nomor WhatsApp dan Pilih Tanggal Lahir terlebih dahulu.";
@@ -118,31 +100,23 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
       return;
     }
 
-    // Simulasi generator 6-digit kode OTP acak
     const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(randomOtp);
-    setTimer(60); // Set ulang timer ke 60 detik
-
-    // Alert simulasi (Pada aplikasi asli, bagian ini diganti dengan integrasi API Gateway WhatsApp Anda)
+    setTimer(60); 
+    
     const otpNotice = `[SISTEM TERVISI OTP GATEWAY]\nKode verifikasi rahasia Anda adalah: ${randomOtp}`;
     Platform.OS === 'web' ? alert(otpNotice) : Alert.alert("🔐 Kode OTP Dikirim", otpNotice);
-
-    // Pindahkan layar modal ke tahap penginputan kode OTP
     setOtpStep('INPUT_OTP');
   };
 
-  // 🔐 LANGKAH 2: Validasi kesesuaian OTP yang dimasukkan pengguna
   const handleVerifyOtp = async () => {
     if (inputOtp !== generatedOtp) {
       const errMsg = "Kode OTP tidak sesuai. Silakan periksa kembali pesan WhatsApp Anda.";
       Platform.OS === 'web' ? alert(errMsg) : Alert.alert("Verifikasi Gagal ❌", errMsg);
       return;
     }
-
-    // Jika OTP sukses dicocokkan, kunci data ke profil utama
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
-
     const updatedUserData = {
       ...userData,
       phone: inputPhone,
@@ -150,12 +124,9 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
       joinedSince: formattedDate
     };
 
-    // Update state komponen
     setUserData(updatedUserData);
     setIsVerified(true);
     setIsModalVisible(false);
-
-    // 🟢 [DITAMBAHKAN]: Penyimpanan data permanen ke AsyncStorage berbasis email user
     try {
       const storageKey = `@profile_data_${userEmail}`;
       const dataToSave = {
@@ -383,7 +354,6 @@ export default function ProfileScreen({ userName, userEmail, onLogout, onBackToD
   );
 }
 
-// Elemen Styling khusus HTML5 Input Date Web Browser
 const webInputStyles = {
   width: '100%',
   backgroundColor: '#f8fafc',

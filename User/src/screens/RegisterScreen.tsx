@@ -2,16 +2,13 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, useWindowDimensions, ScrollView } from 'react-native';
 import { API_URL } from '../config/api'; 
 
-// 🟢 PERBAIKAN: Mengubah tipe data agar onNavigateToLogin mengizinkan pengiriman parameter email opsional
 export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogin: (email?: string) => void }) {
   const [name, setName] = useState(''); 
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState(''); 
   const [isLoading, setIsLoading] = useState(false); 
-
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
-
   const handleRegister = async () => {
     if (isLoading) return;
     if (!name || !email || !password) {
@@ -32,7 +29,6 @@ export default function RegisterScreen({ onNavigateToLogin }: { onNavigateToLogi
         Alert.alert('Sukses 🎉', 'Akun TerraVision kamu berhasil dibuat! Silakan masuk.');
         onNavigateToLogin(); 
       } else {
-        // Jika email sudah terdaftar, langsung lempar email-nya ke login
         Alert.alert(
           'Email Sudah Terdaftar',
           'Akun sudah ada, Fazli. Kamu akan langsung dialihkan ke halaman login.'

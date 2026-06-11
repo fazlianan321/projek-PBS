@@ -4,17 +4,13 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import DashboardScreen from './src/screens/DashboardScreen'; 
 import ProfileScreen from './src/screens/ProfileScreen'; 
-// 🟢 [DITAMBAHKAN]: Import layar AI yang baru kita buat
 import AiDiagnosticScreen from './src/screens/AiDiagnosticScreen'; 
 
 export default function App() {
-  // 🟢 [DIUBAH]: Tambahkan 'AI_DIAGNOSTIC' ke dalam union type state
   const [currentScreen, setCurrentScreen] = useState<'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'PROFILE' | 'AI_DIAGNOSTIC'>('LOGIN');
   const [savedEmail, setSavedEmail] = useState('');
-
   const [loggedInName, setLoggedInName] = useState('');
   const [loggedInEmail, setLoggedInEmail] = useState('');
-
   const handleNavigateToLogin = (emailFromRegister?: string) => {
     if (emailFromRegister) {
       setSavedEmail(emailFromRegister);
@@ -54,8 +50,6 @@ export default function App() {
         <DashboardScreen 
           onLogout={handleLogout} 
           onNavigateToProfile={() => setCurrentScreen('PROFILE')}
-          // 🟢 [DITAMBAHKAN]: Menambahkan navigasi dari Dashboard menuju layar AI
-          // (Pastikan kamu menambahkan props 'onNavigateToAi' di komponen DashboardScreen nanti)
           onNavigateToAi={() => setCurrentScreen('AI_DIAGNOSTIC')}
         />
       ) : currentScreen === 'PROFILE' ? (
@@ -66,7 +60,6 @@ export default function App() {
           onBackToDashboard={() => setCurrentScreen('DASHBOARD')} 
         />
       ) : (
-        // 🟢 [DITAMBAHKAN]: Merender layar AI Diagnostik beserta tombol kembali ke Dashboard
         <View style={styles.aiContainer}>
           <TouchableOpacity 
             style={styles.backButton} 
@@ -87,7 +80,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  // 🟢 [DITAMBAHKAN]: Styling khusus untuk pembungkus layar AI
   aiContainer: {
     flex: 1,
     backgroundColor: '#f9fafb',

@@ -13,10 +13,8 @@ import {
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
-// 🟢 PERBAIKAN KONEKSI: Sesuaikan IP ini dengan IP Localhost Laptopmu saat ini
 const BACKEND_BASE_URL = 'http://192.168.1.6:3000';
-const REQUEST_TIMEOUT = 8000; // 8 detik toleransi pemrosesan gambar AI
-
+const REQUEST_TIMEOUT = 8000; 
 const apiClient = axios.create({
   baseURL: BACKEND_BASE_URL,
   timeout: REQUEST_TIMEOUT,
@@ -123,7 +121,6 @@ export default function AiDiagnosticScreen() {
   const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
     console.log('--- Memicu Tombol Analisis ---');
     
-    // 🟢 PERBAIKAN UTAMA: Jangan biarkan fungsi silent-return jika lahan kosong! Munculkan alert informasi.
     if (!selectedLahan || selectedLahan.trim() === '') {
       Alert.alert(
         'Gagal Memulai',

@@ -3,7 +3,6 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityInd
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../config/api'; 
 
-// 1. 🟢 MEMBUAT INTERFACE PROPS: Mengunci tipe data agar bebas dari eror TypeScript
 interface LoginScreenProps {
   navigation?: any;
   onNavigateToRegister: () => void;
@@ -11,7 +10,6 @@ interface LoginScreenProps {
   onLoginSuccess: (name: string, email: string) => void; 
 }
 
-// 2. 🟢 PASANG INTERFACE: Menggantikan tipe data 'any' yang usang
 export default function LoginScreen({ navigation, onNavigateToRegister, initialEmail, onLoginSuccess }: LoginScreenProps) {
   const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
@@ -58,12 +56,9 @@ export default function LoginScreen({ navigation, onNavigateToRegister, initialE
           }
         }
         
-        // Ekstraksi nama & email riil dari data respon API
         const fallbackName = email.split('@')[0];
         const userRealName = result.user?.name || result.name || fallbackName;
         const userRealEmail = result.user?.email || result.email || email;
-
-        // 3. 🟢 EKSEKUSI CALLBACK: Aman dan terikat parameter data profil secara dinamis
         if (typeof onLoginSuccess === 'function') {
           onLoginSuccess(userRealName, userRealEmail);
         }
