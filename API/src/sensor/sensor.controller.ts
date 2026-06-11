@@ -28,6 +28,13 @@ export class SensorController {
 
   constructor(private readonly sensorService: SensorService) {}
 
+  // 🟢 KODE BARU: Menyediakan data lahan untuk frontend React Native tanpa menghapus kode lain
+  @Get('lahan')
+  async getLahan() {
+    console.log('[BACKEND] 📡 Menerima permintaan daftar lahan dari aplikasi...');
+    return this.sensorService.getDaftarLahan();
+  }
+
   // PERBAIKAN OTOMATISASI: Sekarang input data dari simulator otomatis mengendalikan pompa
   @Post('input')
   async inputData(@Body() data: { suhu: number; kelembapan: number; lahanId: string }) {
