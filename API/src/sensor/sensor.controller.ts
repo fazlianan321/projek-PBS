@@ -11,12 +11,15 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SensorService } from './sensor.service';
 
-// 🟢 PERBAIKAN: Import dotenv agar NestJS bisa membaca file .env secara langsung
-import 'dotenv/config'; 
-import { GoogleGenAI } from '@google/genai';
+// 🟢 PERBAIKAN: Gunakan modul path bawaan untuk mengunci lokasi .env secara absolut
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-// 🟢 PERBAIKAN SELESAI: Mengambil API Key dari .env (Aman dari GitHub Push Protection)
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+// Membaca file .env secara paksa dari folder API tempat file ini berada
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), 'API', '.env') }); // Fallback jika dijalankan dari root folder
+
+import { GoogleGenAI } from '@google/genai';
 
 @Controller('sensor')
 export class SensorController {
@@ -110,12 +113,21 @@ export class SensorController {
 
     console.log(`[🤖 AI VISION] Memproses analisis foto daun "${file.originalname}" untuk Lahan: ${data.lahanId}`);
 
+    // 🟢 PERBAIKAN SINKRONISASI: Inisialisasi dilakukan di dalam method saat request masuk
+    const apiKeyAktual = process.env.GEMINI_API_KEY || '';
+    console.log(`[🔍 DEBUG CONFIG] Memeriksa Key di process.env: ${apiKeyAktual ? 'TERSEDIA (Diawali: ' + apiKeyAktual.substring(0, 7) + '...)' : 'KOSONG / UNDEFINED ❌'}`);
+    
+    if (!apiKeyAktual) {
+      throw new BadRequestException('Server gagal membaca konfigurasi GEMINI_API_KEY dari file .env proyek.');
+    }
+
+    const ai = new GoogleGenAI({ apiKey: apiKeyAktual });
+
     // KODE LAMA (TETAP ADA): Ambil data kelembapan terakhir dari database
     const dataTerakhir = await this.sensorService.getLatestData(data.lahanId);
     const kelembapanAktal = dataTerakhir?.kelembapan ?? 60;
     const suhuAktual = dataTerakhir?.suhu ?? 28; // Tambahan untuk konteks AI
 
-    // KODE LAMA (TETAP ADA): Deklarasi default diagnosis
     let diagnosis = 'Tanaman Sehat & Subur (Kondisi Optimal)';
     let saran = 'Pertahankan kelembapan tanah dan pola manajemen air saat ini.';
 
@@ -154,22 +166,18 @@ export class SensorController {
         contents: [promptSistem, imagePart],
       });
 
-      // 🟢 PERBAIKAN TYPESCRIPT: Pastikan response.text benar-benar ada sebelum dipotong
       if (!response.text) {
         throw new Error('Gemini merespon tanpa teks.');
       }
 
       const aiResult = JSON.parse(response.text.trim());
       
-      // Jika AI Cloud berhasil, timpa variabel diagnosis lama dengan hasil AI Cloud
       diagnosis = aiResult.result;
       saran = aiResult.suggestion;
 
     } catch (error) {
-      // 🟡 1. PERBAIKAN: Menampilkan pesan error asli di terminal agar mudah di-debug
       console.error(`[⚠️ CLOUD ERROR] Gagal menghubungi Gemini. Pesan Error:`, error);
       
-      // 🟡 2. PERBAIKAN: Ubah diagnosis default saat Fallback agar tidak menipu user
       diagnosis = 'Analisis AI Gagal (Koneksi Terputus/API Error)';
       saran = 'Gagal memproses gambar. Menggunakan estimasi sensor lokal sementara waktu.';
 
@@ -182,11 +190,9 @@ export class SensorController {
         saran = 'Tanah terlalu kering. Berikan tambahan pupuk NPK dan optimalkan suplai irigasi.';
       }
 
-      // KODE LAMA (TETAP ADA): Delay server 1.5 detik agar memberikan efek kalkulasi
       await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
-    // Return hasil akhirnya (Entah itu dari Gemini, atau dari Sensor Lokal jika API gagal)
     return {
       success: true,
       lahanId: data.lahanId,
