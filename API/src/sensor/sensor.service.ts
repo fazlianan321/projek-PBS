@@ -15,7 +15,14 @@ export class SensorService {
       },
     });
   }
-
+async getDaftarLahan() {
+    return (this.prisma as any).lahan.findMany({
+      select: {
+        id: true,
+        namaLahan: true,
+      },
+    });
+  }
   async getLatestData(lahanId: string) {
     return (this.prisma as any).sensorData.findFirst({
       where: { lahanId },
