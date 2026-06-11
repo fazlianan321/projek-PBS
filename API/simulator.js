@@ -16,7 +16,6 @@ function kirimDataSensorOtomatis() {
     lahanId: LAHAN_ID
   };
 
-  // 1. Kirim data sensor ke database NestJS
   fetch(API_INPUT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,18 +23,15 @@ function kirimDataSensorOtomatis() {
   })
   .then(res => {
     if (res.ok) {
-      // 2. Mengambil data status terbaru dari NestJS
       return fetch(API_LATEST_URL);
     }
     throw new Error('Gagal mengirim data sensor ke NestJS');
   })
-  // 🟢 PERBAIKAN DI SINI: Ekstrak response stream dari API_LATEST_URL menjadi JSON objek
   .then(res => {
     if (!res.ok) throw new Error('Gagal mengambil data status terbaru');
     return res.json();
   })
   .then(dataTerakhir => {
-    // Membaca status sakelar pompa secara real-time dari backend
     const statusPompa = dataTerakhir && dataTerakhir.statusPompa !== undefined ? dataTerakhir.statusPompa : false;
     const infoPompa = statusPompa ? '🚰 NYALA (Menyiram Lahan)' : '🔴 MATI (Standby)';
 
@@ -48,5 +44,4 @@ function kirimDataSensorOtomatis() {
   });
 }
 
-// Jalankan loop otomatis setiap 5 detik
 setInterval(kirimDataSensorOtomatis, 5000);

@@ -10,7 +10,6 @@ export class AuthService {
   ) {}
 
   async login(email: string, pass: string) {
-    // 1. Cari user di database PostgreSQL (Port 5433)
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -19,7 +18,6 @@ export class AuthService {
       throw new UnauthorizedException('Email atau password salah, Fazli!');
     }
 
-    // 2. Generate JWT Token jika login berhasil
     const payload = { 
       sub: user.id, 
       email: user.email, 
@@ -38,7 +36,6 @@ export class AuthService {
   }
 
   async register(name: string, email: string, password: string) {
-    // 1. Validasi: Pastikan email belum pernah digunakan
     const userExists = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -47,12 +44,11 @@ export class AuthService {
       throw new BadRequestException('Email ini sudah terdaftar di ekosistem TerraVision!');
     }
 
-    // 2. Simpan data user baru ke database PostgreSQL
     const newUser = await this.prisma.user.create({
       data: {
         nama: name, 
         email: email, 
-        password: password, // 🟢 SEKARANG AMAN: Mengambil nilai dari parameter 'password' di atas
+        password: password, 
       },
     });
 
@@ -63,7 +59,6 @@ export class AuthService {
     };
   } 
 
-  // 🔴 PERBAIKAN: Hanya mengambil field yang dijamin valid dan ada di model skema User Prisma Anda
   async findAllUsers() {
     return await this.prisma.user.findMany({
       select: {

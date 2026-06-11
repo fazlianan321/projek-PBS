@@ -19,10 +19,8 @@ export class AuthController {
     return await this.authService.register(namaUser, signUpDto.email, passwordUser);
   }
 
-  // 🔴 TAMBAHKAN ENDPOINT GET INI UNTUK CMS ADMIN
   @Get('users')
   async getAllUsers() {
-    // Pastikan di authService kamu sudah memiliki fungsi untuk mengambil semua data dari database/repository
     return await this.authService.findAllUsers(); 
   }
 }

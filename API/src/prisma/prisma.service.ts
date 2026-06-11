@@ -6,7 +6,6 @@ import { Pool } from 'pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    // 1. Tambahkan pengecekan atau tulis langsung alamatnya
     const connectionString = "postgresql://postgres:123@localhost:5433/db_projek_pbs?schema=public";
     
     const pool = new Pool({ 
