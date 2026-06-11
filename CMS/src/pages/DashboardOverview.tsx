@@ -29,7 +29,6 @@ interface UserData {
   tanggalGabung: string;
 }
 
-// 🟢 KONEKSI API: Pastikan IP ini sesuai dengan IP laptop/server NestJS Anda
 const API_BASE_URL = 'http://192.168.1.6:3000';
 
 const weeklyTrendData = [
@@ -57,13 +56,10 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const isBackendOffline = useRef<boolean>(false);
-
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<string>('Petani');
-
-  // Menambahkan parameter 'silent' agar loading skeleton tidak berkedip saat auto-refresh
   const loadDashboardData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -77,8 +73,6 @@ export default function DashboardOverview() {
 
       const resUsersJson = await resUsers.json();
       const resSensorsJson = await resSensors.json();
-
-      // 🟢 MAPPING USER
       const rawUsers = resUsersJson.data || resUsersJson;
       const mappedUsers = Array.isArray(rawUsers) ? rawUsers.map((user: any) => ({
         id: user.id || 'USR-X',
@@ -90,15 +84,10 @@ export default function DashboardOverview() {
       })) : [];
 
       setUsersList(mappedUsers); 
-      
-      // 🟢 PERBAIKAN MAPPING SENSOR: Menangkap variasi nama property JSON dari NestJS
       const sensorData = resSensorsJson.data || resSensorsJson;
       const rawSensors = Array.isArray(sensorData) ? sensorData : [sensorData];
-      
       const mappedSensors = rawSensors.map((sensor: any) => {
         if (!sensor) return null;
-
-        // Mendeteksi alternatif key dari database (suhuUdara, suhu, temperature, dll)
         const suhuActual = sensor.suhuUdara ?? sensor.suhu ?? sensor.temperature ?? 0;
         const kelembapanActual = sensor.kelembapanTanah ?? sensor.kelembapan ?? sensor.humidity ?? 0;
         const phActual = sensor.phTanah ?? sensor.ph ?? 0;
@@ -157,15 +146,11 @@ export default function DashboardOverview() {
       nodeSensorOffline: offlineSensors,
     });
   }, [usersList, sensorStreams]);
-
-  // 🟢 PERBAIKAN INTERVAL SYNC: Mengambil data asli via API jika online, simulasi acak hanya jika offline
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isBackendOffline.current) {
-        // Jalankan sinkronisasi data asli dari API backend secara berkala
         loadDashboardData(true);
       } else {
-        // Mode Simulasi Angka Acak Lokal (Hanya jalan jika backend mati/error)
         setSensorStreams((prevStreams) =>
           prevStreams.map((sensor) => {
             if (!sensor || sensor.status === 'OFFLINE') return sensor;
@@ -265,7 +250,7 @@ export default function DashboardOverview() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">TerraVision CMS Dashboard</h1>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">TerraVision Admin Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Sistem Manajemen Informasi Terintegrasi Lahan Pertanian Cerdas</p>
           {apiError && (
             <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-lg font-medium">
