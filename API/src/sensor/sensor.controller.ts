@@ -166,15 +166,19 @@ export class SensorController {
       saran = aiResult.suggestion;
 
     } catch (error) {
-      // 🟡 KODE LAMA BERAKSI JIKA API GEMINI GAGAL / INTERNET PUTUS
-      console.log(`[⚠️ CLOUD ERROR] Gagal menghubungi Gemini. Menggunakan Logika Sensor Lokal sebagai Fallback...`);
+      // 🟡 1. PERBAIKAN: Menampilkan pesan error asli di terminal agar mudah di-debug
+      console.error(`[⚠️ CLOUD ERROR] Gagal menghubungi Gemini. Pesan Error:`, error);
       
+      // 🟡 2. PERBAIKAN: Ubah diagnosis default saat Fallback agar tidak menipu user
+      diagnosis = 'Analisis AI Gagal (Koneksi Terputus/API Error)';
+      saran = 'Gagal memproses gambar. Menggunakan estimasi sensor lokal sementara waktu.';
+
       // KODE LAMA (TETAP ADA): Logika keputusan AI lokal berbasis kondisi sensor
       if (kelembapanAktal > 75) {
-        diagnosis = 'Terindikasi Infeksi Jamur / Cercospora (Bercak Daun)';
+        diagnosis = 'Terindikasi Infeksi Jamur / Cercospora (Bercak Daun) [Fallback Mode]';
         saran = 'Kelembapan tanah terlalu tinggi. Batasi irigasi sementara waktu untuk menghentikan spora.';
       } else if (kelembapanAktal < 50) {
-        diagnosis = 'Gejala Klorosis (Kekurangan Nutrisi / Dehidrasi)';
+        diagnosis = 'Gejala Klorosis (Kekurangan Nutrisi / Dehidrasi) [Fallback Mode]';
         saran = 'Tanah terlalu kering. Berikan tambahan pupuk NPK dan optimalkan suplai irigasi.';
       }
 
