@@ -29,14 +29,15 @@ interface UserData {
   tanggalGabung: string;
 }
 
-const API_BASE_URL = 'http://localhost:3000';
+// 🟢 PERBAIKAN KONEKSI: Sesuaikan dengan IP Localhost Laptopmu agar sama dengan aplikasi mobile
+const API_BASE_URL = 'http://192.168.1.6:3000';
 
 const weeklyTrendData = [
   { hari: 'Senin', kelembapanRata2: 62, suhuRata2: 27.4 },
   { hari: 'Selasa', kelembapanRata2: 58, suhuRata2: 28.1 },
   { hari: 'Rabu', kelembapanRata2: 65, suhuRata2: 26.9 },
   { hari: 'Kamis', kelembapanRata2: 70, suhuRata2: 26.5 },
-  { hari: 'Jumat', kelembapanRata2: 52, suhuRata2: 29.3 },
+  { hari: 'Jumat', py: 52, kelembapanRata2: 52, suhuRata2: 29.3 },
   { hari: 'Sabtu', kelembapanRata2: 60, suhuRata2: 28.0 },
   { hari: 'Minggu', kelembapanRata2: 64, suhuRata2: 27.8 },
 ];
@@ -75,27 +76,42 @@ export default function DashboardOverview() {
       const resUsersJson = await resUsers.json();
       const resSensorsJson = await resSensors.json();
 
+      // 🟢 PERBAIKAN MAPPING USER: Antisipasi field 'username' atau 'nama' dari backend
       const rawUsers = resUsersJson.data || resUsersJson;
       const mappedUsers = Array.isArray(rawUsers) ? rawUsers.map((user: any) => ({
         id: user.id || 'USR-X',
-        username: user.nama || 'Tanpa Nama', 
+        username: user.username || user.nama || 'Tanpa Nama', 
         email: user.email || '-',
         role: user.role || 'Petani',
-        status: 'Verified' as const, // 🟢 PERBAIKAN 1: Menambahkan 'as const'
-        tanggalGabung: '-'  
+        status: 'Verified' as const,
+        tanggalGabung: user.createdAt ? new Date(user.createdAt).toLocaleDateString('id-ID') : '-'  
       })) : [];
 
       setUsersList(mappedUsers); 
       
+      // 🟢 PERBAIKAN MAPPING SENSOR: Mengubah field raw database NestJS ke format UI CMS
       const sensorData = resSensorsJson.data || resSensorsJson;
-      setSensorStreams(Array.isArray(sensorData) ? sensorData : [sensorData]);
+      const rawSensors = Array.isArray(sensorData) ? sensorData : [sensorData];
       
+      const mappedSensors = rawSensors.map((sensor: any) => {
+        if (!sensor) return null;
+        return {
+          nodeId: sensor.nodeId || sensor.id || 'NODE-01',
+          lokasi: sensor.lokasi || (sensor.lahan ? sensor.lahan.namaLahan : 'Zona Lahan Utama'),
+          kelembapanTanah: sensor.kelembapanTanah ?? 0,
+          suhuUdara: sensor.suhuUdara ?? 0,
+          phTanah: sensor.phTanah ?? 0,
+          status: 'ONLINE' as const, // Jika API berhasil ditarik, set status ke ONLINE secara default
+          lastUpdated: sensor.createdAt ? new Date(sensor.createdAt).toLocaleTimeString('id-ID') : 'Baru saja'
+        };
+      }).filter(Boolean) as SensorDataStream[];
+
+      setSensorStreams(mappedSensors);
       setApiError(null);
     } catch (err: any) {
       console.warn('Backend offline, memuat data lokal sebagai fallback.');
       setApiError('Koneksi database pusat offline atau endpoint bermasalah. Menjalankan mode simulasi.');
       
-      // 🟢 PERBAIKAN 2: Menggunakan 'as const' pada data simulasi agar tidak terdeteksi sebagai string biasa
       setUsersList([
         { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified' as const, tanggalGabung: '12 Jan 2026' },
         { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified' as const, tanggalGabung: '05 Feb 2026' },
@@ -124,7 +140,7 @@ export default function DashboardOverview() {
     setStats({
       totalPetani: usersList.filter(u => u.role.toLowerCase() === 'petani' || u.role === 'USER').length,
       petaniTerverifikasi: verifiedCount,
-      totalLahanAktif: 85, 
+      totalLahanAktif: 4, // Jumlah zona yang terpeta
       nodeSensorOnline: onlineSensors,
       nodeSensorOffline: offlineSensors,
     });
@@ -170,7 +186,6 @@ export default function DashboardOverview() {
         throw new Error();
       }
     } catch {
-      // 🟢 PERBAIKAN 3: Menambahkan 'as const' di data fallback penambahan user
       setUsersList([...usersList, { id: `USR-00${usersList.length + 1}`, username: newUserName, email: newUserEmail, role: newUserRole, status: 'Verified' as const, tanggalGabung: 'Hari ini' }]);
     }
 
