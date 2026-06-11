@@ -15,7 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 // 🟢 PERBAIKAN KONEKSI: Sesuaikan IP ini dengan IP Localhost Laptopmu saat ini
 const BACKEND_BASE_URL = 'http://192.168.1.6:3000';
-const REQUEST_TIMEOUT = 5000;
+const REQUEST_TIMEOUT = 8000; // Dinaikkan ke 8 detik agar pemrosesan gambar AI tidak prematur timeout
 
 const apiClient = axios.create({
   baseURL: BACKEND_BASE_URL,
@@ -50,11 +50,13 @@ export default function AiDiagnosticScreen() {
   const [daftarLahan, setDaftarLahan] = useState<Lahan[]>([]);
   const [selectedLahan, setSelectedLahan] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingStatus, setLoadingStatus] = useState<string>('Mempersiapkan data...');
   const [aiResult, setAiResult] = useState<AiResult | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 
   const isMounted = useRef<boolean>(true);
   const abortController = useRef<AbortController | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null); // Ref untuk Auto-Scroll
 
   useEffect(() => {
     isMounted.current = true;
@@ -116,7 +118,6 @@ export default function AiDiagnosticScreen() {
 
   const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
     console.log('--- Memicu Tombol Analisis ---');
-    console.log('Status Loading saat diklik:', loading);
     
     if (!selectedLahan || selectedLahan.trim() === '') {
       Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan terlebih dahulu.');
@@ -127,18 +128,25 @@ export default function AiDiagnosticScreen() {
       return;
     }
     
-    if (loading) {
-      console.log('⚠️ Aksi dibatalkan: Proses AI masih berjalan.');
-      return; 
-    }
+    if (loading) return; 
 
     setLoading(true);
     setAiResult(null); 
+    setLoadingStatus('📸 Mengompresi citra sampel daun...');
     abortController.current = new AbortController();
+
+    // Simulasi perubahan status teks progress agar interaktif
+    const statusTimeout = setTimeout(() => {
+      if (isMounted.current && !aiResult) setLoadingStatus('📡 Mengirim berkas ke server TerraVision...');
+    }, 1500);
+
+    const statusTimeout2 = setTimeout(() => {
+      if (isMounted.current && !aiResult) setLoadingStatus('🤖 Model AI sedang mengalkulasi klorofil & parameter...');
+    }, 3500);
 
     const timeoutId = setTimeout(() => {
       if (abortController.current) {
-        console.log('⚠️ Timeout: Request mencapai batas 5 detik.');
+        console.log('⚠️ Timeout dicapai.');
         abortController.current.abort();
       }
     }, REQUEST_TIMEOUT);
@@ -163,22 +171,18 @@ export default function AiDiagnosticScreen() {
         } as any);
       }
 
-      console.log('Mengirim Request POST ke:', `${BACKEND_BASE_URL}/sensor/ai/analyze-leaf`);
-
       const response = await fetch(`${BACKEND_BASE_URL}/sensor/ai/analyze-leaf`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: { 'Accept': 'application/json' },
         signal: abortController.current.signal,
       });
 
       clearTimeout(timeoutId);
+      clearTimeout(statusTimeout);
+      clearTimeout(statusTimeout2);
 
       if (!isMounted.current) return;
-
-      console.log('Status Respon HTTP:', response.status);
 
       if (!response.ok) {
         const textError = await response.text().catch(() => "Unknown Server Error");
@@ -186,7 +190,6 @@ export default function AiDiagnosticScreen() {
       }
 
       const responseData = await response.json();
-      console.log('Data sukses diterima dari backend:', responseData);
 
       if (responseData && (responseData.result || responseData.suggestion)) {
         setAiResult({
@@ -194,11 +197,18 @@ export default function AiDiagnosticScreen() {
           suggestion: sanitizeText(responseData.suggestion || 'Tidak ada saran spesifik.'),
           analyzedAt: responseData.analyzedAt || new Date().toLocaleString()
         });
+
+        // 🌟 UX IMPROVEMENT: Otomatis scroll ke bawah setelah data berhasil dirender
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
       } else {
         throw new Error('Payload corrupt atau struktur response salah.');
       }
     } catch (error: any) {
       clearTimeout(timeoutId);
+      clearTimeout(statusTimeout);
+      clearTimeout(statusTimeout2);
       if (!isMounted.current) return;
       
       console.error('❌ Error Diagnosa:', error);
@@ -209,7 +219,6 @@ export default function AiDiagnosticScreen() {
         Alert.alert('Diagnosa Gagal', error.message || 'Sistem AI gagal memproses data.');
       }
     } finally {
-      console.log('--- Proses Analisis Selesai ---');
       if (isMounted.current) {
         setLoading(false); 
         abortController.current = null; 
@@ -239,6 +248,7 @@ export default function AiDiagnosticScreen() {
             key={lahan.id} 
             style={[styles.lahanButton, selectedLahan === lahan.id && styles.lahanButtonActive]}
             onPress={() => setSelectedLahan(lahan.id)}
+            disabled={loading}
             activeOpacity={0.7}
           >
             <Text style={[styles.lahanText, selectedLahan === lahan.id && styles.lahanTextActive]}>
@@ -251,11 +261,16 @@ export default function AiDiagnosticScreen() {
   );
 
   const renderAttachmentBox = () => (
-    <TouchableOpacity style={styles.uploadBox} onPress={handleCaptureLeaf} activeOpacity={0.8}>
+    <TouchableOpacity 
+      style={styles.uploadBox} 
+      onPress={handleCaptureLeaf} 
+      disabled={loading}
+      activeOpacity={0.8}
+    >
       {selectedImageUri ? (
         <View style={styles.previewContainer}>
           <Image source={{ uri: selectedImageUri }} style={styles.imagePreview} />
-          <Text style={styles.uploadBoxTextUpdate}>🔄 Ketuk untuk Mengambil Ulang Gambar</Text>
+          {!loading && <Text style={styles.uploadBoxTextUpdate}>🔄 Ketuk untuk Mengambil Ulang Gambar</Text>}
         </View>
       ) : (
         <View style={{ alignItems: 'center' }}>
@@ -273,16 +288,22 @@ export default function AiDiagnosticScreen() {
       disabled={loading} 
       activeOpacity={0.8}
     >
-      <Text style={styles.buttonText}>
-        {loading ? 'Mengalkulasi Model AI...' : 'Mulai Diagnosa Tanaman'}
-      </Text>
+      {loading ? (
+        <View style={styles.buttonLoadingContainer}>
+          <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+          <Text style={styles.buttonText}>Mengevaluasi Daun...</Text>
+        </View>
+      ) : (
+        <Text style={styles.buttonText}>Mulai Diagnosa Tanaman</Text>
+      )}
     </TouchableOpacity>
   );
 
   const renderLoadingSpinner = () => loading && (
     <View style={styles.center}>
       <ActivityIndicator size="large" color="#059669" />
-      <Text style={styles.loadingText}>Membaca parameter database & klorofil...</Text>
+      <Text style={styles.loadingText}>{loadingStatus}</Text>
+      <Text style={styles.loadingSubText}>Mohon tunggu, proses ini membutuhkan komputasi model vision.</Text>
     </View>
   );
 
@@ -310,7 +331,11 @@ export default function AiDiagnosticScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      ref={scrollViewRef} 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+    >
       {renderHeader()}
       <View style={styles.card}>
         {renderLahanSelection()}
@@ -346,10 +371,12 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#059669', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 6, shadowColor: '#059669', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
   buttonDisabled: { backgroundColor: '#9ca3af', shadowOpacity: 0, elevation: 0 },
   buttonText: { color: '#ffffff', fontWeight: 'bold', fontSize: 15 },
+  buttonLoadingContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   resultCard: { backgroundColor: '#ffffff', padding: 16, borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2, minHeight: 160, justifyContent: 'center', marginBottom: 40 },
   resultContainer: { width: '100%' },
-  center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
-  loadingText: { color: '#4b5563', marginTop: 10, fontSize: 13, fontWeight: '500' },
+  center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 15 },
+  loadingText: { color: '#111827', marginTop: 12, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  loadingSubText: { color: '#6b7280', fontSize: 11, marginTop: 4, textAlign: 'center', paddingHorizontal: 20 },
   placeholderText: { color: '#9ca3af', textAlign: 'center', fontSize: 13, lineHeight: 18, paddingHorizontal: 10 },
   resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingBottom: 10, marginBottom: 12 },
   badge: { backgroundColor: '#d1fae5', color: '#065f46', fontSize: 11, fontWeight: 'bold', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
