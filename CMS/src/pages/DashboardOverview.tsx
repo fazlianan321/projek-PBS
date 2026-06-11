@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users, Sprout, Cpu, AlertTriangle, Activity, UserPlus, Trash2, Edit2, WifiOff } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -29,7 +29,7 @@ interface UserData {
   tanggalGabung: string;
 }
 
-// 🟢 PERBAIKAN KONEKSI: Sesuaikan dengan IP Localhost Laptopmu agar sama dengan aplikasi mobile
+// 🟢 KONEKSI API: Pastikan IP ini sesuai dengan IP laptop/server NestJS Anda
 const API_BASE_URL = 'http://192.168.1.6:3000';
 
 const weeklyTrendData = [
@@ -56,15 +56,17 @@ export default function DashboardOverview() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const isBackendOffline = useRef<boolean>(false);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<string>('Petani');
 
-  const loadDashboardData = async () => {
+  // Menambahkan parameter 'silent' agar loading skeleton tidak berkedip saat auto-refresh
+  const loadDashboardData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       
       const [resUsers, resSensors] = await Promise.all([
         fetch(`${API_BASE_URL}/auth/users`),
@@ -76,7 +78,7 @@ export default function DashboardOverview() {
       const resUsersJson = await resUsers.json();
       const resSensorsJson = await resSensors.json();
 
-      // 🟢 PERBAIKAN MAPPING USER: Antisipasi field 'username' atau 'nama' dari backend
+      // 🟢 MAPPING USER
       const rawUsers = resUsersJson.data || resUsersJson;
       const mappedUsers = Array.isArray(rawUsers) ? rawUsers.map((user: any) => ({
         id: user.id || 'USR-X',
@@ -89,42 +91,52 @@ export default function DashboardOverview() {
 
       setUsersList(mappedUsers); 
       
-      // 🟢 PERBAIKAN MAPPING SENSOR: Mengubah field raw database NestJS ke format UI CMS
+      // 🟢 PERBAIKAN MAPPING SENSOR: Menangkap variasi nama property JSON dari NestJS
       const sensorData = resSensorsJson.data || resSensorsJson;
       const rawSensors = Array.isArray(sensorData) ? sensorData : [sensorData];
       
       const mappedSensors = rawSensors.map((sensor: any) => {
         if (!sensor) return null;
+
+        // Mendeteksi alternatif key dari database (suhuUdara, suhu, temperature, dll)
+        const suhuActual = sensor.suhuUdara ?? sensor.suhu ?? sensor.temperature ?? 0;
+        const kelembapanActual = sensor.kelembapanTanah ?? sensor.kelembapan ?? sensor.humidity ?? 0;
+        const phActual = sensor.phTanah ?? sensor.ph ?? 0;
+
         return {
           nodeId: sensor.nodeId || sensor.id || 'NODE-01',
           lokasi: sensor.lokasi || (sensor.lahan ? sensor.lahan.namaLahan : 'Zona Lahan Utama'),
-          kelembapanTanah: sensor.kelembapanTanah ?? 0,
-          suhuUdara: sensor.suhuUdara ?? 0,
-          phTanah: sensor.phTanah ?? 0,
-          status: 'ONLINE' as const, // Jika API berhasil ditarik, set status ke ONLINE secara default
+          kelembapanTanah: Number(kelembapanActual),
+          suhuUdara: Number(suhuActual),
+          phTanah: Number(phActual),
+          status: 'ONLINE' as const, 
           lastUpdated: sensor.createdAt ? new Date(sensor.createdAt).toLocaleTimeString('id-ID') : 'Baru saja'
         };
       }).filter(Boolean) as SensorDataStream[];
 
       setSensorStreams(mappedSensors);
       setApiError(null);
+      isBackendOffline.current = false;
     } catch (err: any) {
-      console.warn('Backend offline, memuat data lokal sebagai fallback.');
-      setApiError('Koneksi database pusat offline atau endpoint bermasalah. Menjalankan mode simulasi.');
-      
-      setUsersList([
-        { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified' as const, tanggalGabung: '12 Jan 2026' },
-        { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified' as const, tanggalGabung: '05 Feb 2026' },
-        { id: 'USR-003', username: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', status: 'Unverified' as const, tanggalGabung: '28 Mei 2026' },
-      ]);
-      setSensorStreams([
-        { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 72, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
-        { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
-        { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
-        { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
-      ]);
+      if (!isBackendOffline.current) {
+        console.warn('Backend offline, memuat data lokal sebagai fallback.');
+        setApiError('Koneksi database pusat offline atau endpoint bermasalah. Menjalankan mode simulasi.');
+        isBackendOffline.current = true;
+        
+        setUsersList([
+          { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified' as const, tanggalGabung: '12 Jan 2026' },
+          { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified' as const, tanggalGabung: '05 Feb 2026' },
+          { id: 'USR-003', username: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', status: 'Unverified' as const, tanggalGabung: '28 Mei 2026' },
+        ]);
+        setSensorStreams([
+          { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 72, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
+          { nodeId: 'TRV-002', lokasi: 'Blok B - Tomat', kelembapanTanah: 42, suhuUdara: 31.2, phTanah: 5.8, status: 'ONLINE', lastUpdated: '1 menit lalu' },
+          { nodeId: 'TRV-003', lokasi: 'Blok C - Cabai', kelembapanTanah: 55, suhuUdara: 29.0, phTanah: 6.2, status: 'ONLINE', lastUpdated: '3 menit lalu' },
+          { nodeId: 'TRV-004', lokasi: 'Blok D - Pembibitan', kelembapanTanah: 0, suhuUdara: 0, phTanah: 0, status: 'OFFLINE', lastUpdated: '2 jam lalu' },
+        ]);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -140,25 +152,32 @@ export default function DashboardOverview() {
     setStats({
       totalPetani: usersList.filter(u => u.role.toLowerCase() === 'petani' || u.role === 'USER').length,
       petaniTerverifikasi: verifiedCount,
-      totalLahanAktif: 4, // Jumlah zona yang terpeta
+      totalLahanAktif: 4, 
       nodeSensorOnline: onlineSensors,
       nodeSensorOffline: offlineSensors,
     });
   }, [usersList, sensorStreams]);
 
+  // 🟢 PERBAIKAN INTERVAL SYNC: Mengambil data asli via API jika online, simulasi acak hanya jika offline
   useEffect(() => {
     const interval = setInterval(() => {
-      setSensorStreams((prevStreams) =>
-        prevStreams.map((sensor) => {
-          if (!sensor || sensor.status === 'OFFLINE') return sensor;
-          return {
-            ...sensor,
-            kelembapanTanah: Math.max(30, Math.min(90, sensor.kelembapanTanah + (Math.random() > 0.5 ? 1 : -1))),
-            suhuUdara: parseFloat((sensor.suhuUdara + (Math.random() > 0.5 ? 0.2 : -0.2)).toFixed(1)),
-            lastUpdated: 'Baru saja'
-          };
-        })
-      );
+      if (!isBackendOffline.current) {
+        // Jalankan sinkronisasi data asli dari API backend secara berkala
+        loadDashboardData(true);
+      } else {
+        // Mode Simulasi Angka Acak Lokal (Hanya jalan jika backend mati/error)
+        setSensorStreams((prevStreams) =>
+          prevStreams.map((sensor) => {
+            if (!sensor || sensor.status === 'OFFLINE') return sensor;
+            return {
+              ...sensor,
+              kelembapanTanah: Math.max(30, Math.min(90, sensor.kelembapanTanah + (Math.random() > 0.5 ? 1 : -1))),
+              suhuUdara: parseFloat((sensor.suhuUdara + (Math.random() > 0.5 ? 0.2 : -0.2)).toFixed(1)),
+              lastUpdated: 'Baru saja (Simulasi)'
+            };
+          })
+        );
+      }
     }, 5000);
     return () => clearInterval(interval);
   }, []);
