@@ -15,7 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 // 🟢 PERBAIKAN KONEKSI: Sesuaikan IP ini dengan IP Localhost Laptopmu saat ini
 const BACKEND_BASE_URL = 'http://192.168.1.6:3000';
-const REQUEST_TIMEOUT = 8000; // Dinaikkan ke 8 detik agar pemrosesan gambar AI tidak prematur timeout
+const REQUEST_TIMEOUT = 8000; // 8 detik toleransi pemrosesan gambar AI
 
 const apiClient = axios.create({
   baseURL: BACKEND_BASE_URL,
@@ -56,7 +56,7 @@ export default function AiDiagnosticScreen() {
 
   const isMounted = useRef<boolean>(true);
   const abortController = useRef<AbortController | null>(null);
-  const scrollViewRef = useRef<ScrollView>(null); // Ref untuk Auto-Scroll
+  const scrollViewRef = useRef<ScrollView>(null); 
 
   useEffect(() => {
     isMounted.current = true;
@@ -76,7 +76,8 @@ export default function AiDiagnosticScreen() {
 
   const fetchDaftarLahan = useCallback(async (): Promise<void> => {
     try {
-      const response = await apiClient.get<Lahan[]>('/lahan');
+      // 🟢 PERBAIKAN ENDPOINT: Menyesuaikan dengan route backend yang baru (/sensor/lahan)
+      const response = await apiClient.get<Lahan[]>('/sensor/lahan');
       if (!isMounted.current) return;
 
       if (validateLahanData(response.data)) {
@@ -87,7 +88,10 @@ export default function AiDiagnosticScreen() {
       }
     } catch (error) {
       if (!isMounted.current) return; 
-      Alert.alert('Gagal Modul', 'Koneksi ke database lahan terputus. Pastikan server NestJS aktif.');
+      Alert.alert(
+        'Gagal Memuat Lahan', 
+        'Koneksi terputus atau rute /sensor/lahan tidak ditemukan. Pastikan server NestJS aktif.'
+      );
     }
   }, []);
 
@@ -119,12 +123,20 @@ export default function AiDiagnosticScreen() {
   const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
     console.log('--- Memicu Tombol Analisis ---');
     
+    // 🟢 PERBAIKAN UTAMA: Jangan biarkan fungsi silent-return jika lahan kosong! Munculkan alert informasi.
     if (!selectedLahan || selectedLahan.trim() === '') {
-      Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan terlebih dahulu.');
+      Alert.alert(
+        'Gagal Memulai',
+        'Zona lahan belum dipilih atau data gagal dimuat dari server NestJS.'
+      );
       return;
     }
+
     if (!selectedImageUri) {
-      Alert.alert('Peringatan Sistem', 'Foto daun belum diambil. Silakan klik kotak kamera di atas.');
+      Alert.alert(
+        'Foto Daun Kosong', 
+        'Citra daun belum diambil. Silakan ketuk kotak kamera di atas terlebih dahulu.'
+      );
       return;
     }
     
@@ -135,7 +147,6 @@ export default function AiDiagnosticScreen() {
     setLoadingStatus('📸 Mengompresi citra sampel daun...');
     abortController.current = new AbortController();
 
-    // Simulasi perubahan status teks progress agar interaktif
     const statusTimeout = setTimeout(() => {
       if (isMounted.current && !aiResult) setLoadingStatus('📡 Mengirim berkas ke server TerraVision...');
     }, 1500);
@@ -198,7 +209,6 @@ export default function AiDiagnosticScreen() {
           analyzedAt: responseData.analyzedAt || new Date().toLocaleString()
         });
 
-        // 🌟 UX IMPROVEMENT: Otomatis scroll ke bawah setelah data berhasil dirender
         setTimeout(() => {
           scrollViewRef.current?.scrollToEnd({ animated: true });
         }, 100);
@@ -224,7 +234,7 @@ export default function AiDiagnosticScreen() {
         abortController.current = null; 
       }
     }
-  }, [selectedLahan, selectedImageUri, loading]);
+  }, [selectedLahan, selectedImageUri, loading, aiResult]);
 
   useEffect(() => {
     fetchDaftarLahan();
@@ -241,7 +251,7 @@ export default function AiDiagnosticScreen() {
     <View>
       <Text style={styles.label}>Zona Lahan Terpilih:</Text>
       {daftarLahan.length === 0 ? (
-        <Text style={styles.emptyText}>Tidak ada data lahan tersedia.</Text>
+        <Text style={styles.emptyText}>⚠️ Tidak ada data lahan. Periksa endpoint /sensor/lahan di NestJS.</Text>
       ) : (
         daftarLahan.map((lahan) => (
           <TouchableOpacity 
@@ -269,7 +279,12 @@ export default function AiDiagnosticScreen() {
     >
       {selectedImageUri ? (
         <View style={styles.previewContainer}>
-          <Image source={{ uri: selectedImageUri }} style={styles.imagePreview} />
+          {/* 🟢 PERBAIKAN: Properti resizeMode dipindah ke properti langsung komponen Image */}
+          <Image 
+            source={{ uri: selectedImageUri }} 
+            style={styles.imagePreview} 
+            resizeMode="cover" 
+          />
           {!loading && <Text style={styles.uploadBoxTextUpdate}>🔄 Ketuk untuk Mengambil Ulang Gambar</Text>}
         </View>
       ) : (
@@ -361,13 +376,13 @@ const styles = StyleSheet.create({
   lahanButtonActive: { backgroundColor: '#e6f4ea', borderColor: '#10b981' },
   lahanText: { fontSize: 14, color: '#4b5563', fontWeight: '500' },
   lahanTextActive: { color: '#065f46', fontWeight: '700' },
-  emptyText: { color: '#9ca3af', fontSize: 13, fontStyle: 'italic', marginVertical: 8 },
+  emptyText: { color: '#ef4444', fontSize: 13, fontStyle: 'italic', marginVertical: 8, fontWeight: '500' },
   leafIcon: { fontSize: 36, textAlign: 'center' },
   uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#a7f3d0', backgroundColor: '#f0fdf4', borderRadius: 10, padding: 18, alignItems: 'center', marginVertical: 12 },
   uploadBoxText: { fontSize: 12, color: '#047857', fontWeight: '600', marginTop: 6 },
   uploadBoxTextUpdate: { fontSize: 11, color: '#047857', fontWeight: '700', marginTop: 6 },
   previewContainer: { width: '100%', alignItems: 'center' },
-  imagePreview: { width: '100%', height: 150, borderRadius: 8, resizeMode: 'cover' },
+  imagePreview: { width: '100%', height: 150, borderRadius: 8 }, 
   button: { backgroundColor: '#059669', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 6, shadowColor: '#059669', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
   buttonDisabled: { backgroundColor: '#9ca3af', shadowOpacity: 0, elevation: 0 },
   buttonText: { color: '#ffffff', fontWeight: 'bold', fontSize: 15 },
