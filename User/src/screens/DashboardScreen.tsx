@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker'; 
 
 // 🟢 CONFIGURASI URL BACKEND (Menggunakan IP Laptop Terbaru Kamu: 192.168.1.6)
-const IP_LAPTOP = '192.168.1.38'; 
+const IP_LAPTOP = '192.168.1.6'; 
 const LAHAN_ID = 'TRV-001'; 
 const API_URL = `http://${IP_LAPTOP}:3000/sensor/latest/${LAHAN_ID}`; 
 

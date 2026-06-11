@@ -13,7 +13,7 @@ import {
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
-// 🟢 PERBAIKAN KONEKSI: Sesuaikan IP ini dengan IP Localhost Laptopmu saat ini (Contoh: 192.168.1.6)
+// 🟢 PERBAIKAN KONEKSI: Sesuaikan IP ini dengan IP Localhost Laptopmu saat ini
 const BACKEND_BASE_URL = 'http://192.168.1.6:3000';
 const REQUEST_TIMEOUT = 5000;
 
@@ -114,12 +114,10 @@ export default function AiDiagnosticScreen() {
     }
   };
 
-  const isInputInvalid = (): boolean => {
-    return !selectedLahan || selectedLahan.trim() === '' || !selectedImageUri;
-  };
-
   const handleAnalyzeLeaf = useCallback(async (): Promise<void> => {
-    // 🟢 PERBAIKAN 1: Jangan biarkan fungsi keluar secara bisu. Berikan instruksi jika data kosong.
+    console.log('--- Memicu Tombol Analisis ---');
+    console.log('Status Loading saat diklik:', loading);
+    
     if (!selectedLahan || selectedLahan.trim() === '') {
       Alert.alert('Peringatan Sistem', 'Silakan tentukan zona lahan terlebih dahulu.');
       return;
@@ -128,15 +126,19 @@ export default function AiDiagnosticScreen() {
       Alert.alert('Peringatan Sistem', 'Foto daun belum diambil. Silakan klik kotak kamera di atas.');
       return;
     }
-    if (loading) return; 
+    
+    if (loading) {
+      console.log('⚠️ Aksi dibatalkan: Proses AI masih berjalan.');
+      return; 
+    }
 
     setLoading(true);
     setAiResult(null); 
     abortController.current = new AbortController();
 
-    // 🟢 PERBAIKAN 2: Mengembalikan fungsi Timeout 5 detik untuk native fetch agar tidak gantung/freeze
     const timeoutId = setTimeout(() => {
       if (abortController.current) {
+        console.log('⚠️ Timeout: Request mencapai batas 5 detik.');
         abortController.current.abort();
       }
     }, REQUEST_TIMEOUT);
@@ -161,6 +163,8 @@ export default function AiDiagnosticScreen() {
         } as any);
       }
 
+      console.log('Mengirim Request POST ke:', `${BACKEND_BASE_URL}/sensor/ai/analyze-leaf`);
+
       const response = await fetch(`${BACKEND_BASE_URL}/sensor/ai/analyze-leaf`, {
         method: 'POST',
         body: formData,
@@ -170,9 +174,11 @@ export default function AiDiagnosticScreen() {
         signal: abortController.current.signal,
       });
 
-      clearTimeout(timeoutId); // Bersihkan timeout jika server merespon tepat waktu
+      clearTimeout(timeoutId);
 
       if (!isMounted.current) return;
+
+      console.log('Status Respon HTTP:', response.status);
 
       if (!response.ok) {
         const textError = await response.text().catch(() => "Unknown Server Error");
@@ -180,11 +186,12 @@ export default function AiDiagnosticScreen() {
       }
 
       const responseData = await response.json();
+      console.log('Data sukses diterima dari backend:', responseData);
 
-      if (responseData && responseData.result && responseData.suggestion) {
+      if (responseData && (responseData.result || responseData.suggestion)) {
         setAiResult({
-          result: sanitizeText(responseData.result),
-          suggestion: sanitizeText(responseData.suggestion),
+          result: sanitizeText(responseData.result || 'Analisis selesai.'),
+          suggestion: sanitizeText(responseData.suggestion || 'Tidak ada saran spesifik.'),
           analyzedAt: responseData.analyzedAt || new Date().toLocaleString()
         });
       } else {
@@ -194,13 +201,15 @@ export default function AiDiagnosticScreen() {
       clearTimeout(timeoutId);
       if (!isMounted.current) return;
       
-      // 🟢 PERBAIKAN 3: Memunculkan pesan error spesifik (termasuk jika rute IP salah atau RTO)
+      console.error('❌ Error Diagnosa:', error);
+
       if (error.name === 'AbortError') {
-        Alert.alert('Koneksi Terputus', 'Batas waktu habis (Timeout). Pastikan IP backend benar dan server aktif.');
+        Alert.alert('Koneksi Terputus', 'Batas waktu habis. Pastikan IP backend benar dan server berjalan.');
       } else {
         Alert.alert('Diagnosa Gagal', error.message || 'Sistem AI gagal memproses data.');
       }
     } finally {
+      console.log('--- Proses Analisis Selesai ---');
       if (isMounted.current) {
         setLoading(false); 
         abortController.current = null; 
@@ -259,7 +268,6 @@ export default function AiDiagnosticScreen() {
 
   const renderSubmitButton = () => (
     <TouchableOpacity 
-      // 🟢 PERBAIKAN 4: Jangan kunci tombol di UI agar pengguna tahu bagian mana yang belum terisi
       style={[styles.button, loading && styles.buttonDisabled]} 
       onPress={handleAnalyzeLeaf}
       disabled={loading} 

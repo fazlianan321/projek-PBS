@@ -65,7 +65,6 @@ export default function DashboardOverview() {
     try {
       setLoading(true);
       
-      // 🔴 PERBAIKAN: Mengarahkan endpoint user ke /auth/users sesuai rute NestJS kamu
       const [resUsers, resSensors] = await Promise.all([
         fetch(`${API_BASE_URL}/auth/users`),
         fetch(`${API_BASE_URL}/sensor/latest/1`) 
@@ -76,15 +75,14 @@ export default function DashboardOverview() {
       const resUsersJson = await resUsers.json();
       const resSensorsJson = await resSensors.json();
 
-      // 🔴 PERBAIKAN: Lakukan mapping data agar properti 'nama' dari database terbaca sebagai 'username' di tabel
       const rawUsers = resUsersJson.data || resUsersJson;
       const mappedUsers = Array.isArray(rawUsers) ? rawUsers.map((user: any) => ({
         id: user.id || 'USR-X',
         username: user.nama || 'Tanpa Nama', 
         email: user.email || '-',
         role: user.role || 'Petani',
-        status: 'Verified', // Default value karena kolom status tidak ada di DB
-        tanggalGabung: '-'  // Default value karena kolom createdAt tidak ada di DB
+        status: 'Verified' as const, // 🟢 PERBAIKAN 1: Menambahkan 'as const'
+        tanggalGabung: '-'  
       })) : [];
 
       setUsersList(mappedUsers); 
@@ -97,10 +95,11 @@ export default function DashboardOverview() {
       console.warn('Backend offline, memuat data lokal sebagai fallback.');
       setApiError('Koneksi database pusat offline atau endpoint bermasalah. Menjalankan mode simulasi.');
       
+      // 🟢 PERBAIKAN 2: Menggunakan 'as const' pada data simulasi agar tidak terdeteksi sebagai string biasa
       setUsersList([
-        { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified', tanggalGabung: '12 Jan 2026' },
-        { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified', tanggalGabung: '05 Feb 2026' },
-        { id: 'USR-003', username: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', status: 'Unverified', tanggalGabung: '28 Mei 2026' },
+        { id: 'USR-001', username: 'Supardi', email: 'supardi.lahan@gmail.com', role: 'Petani', status: 'Verified' as const, tanggalGabung: '12 Jan 2026' },
+        { id: 'USR-002', username: 'Siti Rahma', email: 'siti.vision@terra.id', role: 'Manajer Lahan', status: 'Verified' as const, tanggalGabung: '05 Feb 2026' },
+        { id: 'USR-003', username: 'Budi Santoso', email: 'budi.farm@gmail.com', role: 'Petani', status: 'Unverified' as const, tanggalGabung: '28 Mei 2026' },
       ]);
       setSensorStreams([
         { nodeId: 'TRV-001', lokasi: 'Blok A - Lahan Utama', kelembapanTanah: 72, suhuUdara: 28.5, phTanah: 6.5, status: 'ONLINE', lastUpdated: 'Baru saja' },
@@ -153,10 +152,10 @@ export default function DashboardOverview() {
     if (!newUserName || !newUserEmail) return;
 
     const newUserData = {
-      name: newUserName, // Disesuaikan kunci parameter dengan auth.controller.ts (name atau nama)
+      name: newUserName, 
       email: newUserEmail,
       role: newUserRole,
-      pass: 'pbas1234' // Berikan password default untuk registrasi dari sisi admin CMS
+      pass: 'pbas1234' 
     };
 
     try {
@@ -171,7 +170,8 @@ export default function DashboardOverview() {
         throw new Error();
       }
     } catch {
-      setUsersList([...usersList, { id: `USR-00${usersList.length + 1}`, username: newUserName, email: newUserEmail, role: newUserRole, status: 'Verified', tanggalGabung: 'Hari ini' }]);
+      // 🟢 PERBAIKAN 3: Menambahkan 'as const' di data fallback penambahan user
+      setUsersList([...usersList, { id: `USR-00${usersList.length + 1}`, username: newUserName, email: newUserEmail, role: newUserRole, status: 'Verified' as const, tanggalGabung: 'Hari ini' }]);
     }
 
     setNewUserName('');
@@ -304,7 +304,6 @@ export default function DashboardOverview() {
               <p className="text-slate-400 text-xs">Rata-rata fluktuasi parameter mikro agregat dari seluruh node sensor</p>
             </div>
             
-            {/* 🔴 PERBAIKAN: Memberikan style height absolut agar ResponsiveContainer Recharts dapat mengalkulasi dimensi layout */}
             <div className="w-full" style={{ height: '300px', minWidth: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weeklyTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -399,7 +398,7 @@ export default function DashboardOverview() {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <div>
               <h2 className="text-base font-bold text-slate-800">Daftar Otoritas Akun & Manajemen Petani</h2>
-              <p className="text-slate-400 text-xs">Kelola hak akses kontrol aplikasi, proses verifikasi, dan hapus akun</p>
+              <p className="text-slate-400 text-xs">Kelola hak akses kontrol application, proses verifikasi, dan hapus akun</p>
             </div>
             <button 
               onClick={() => setShowAddForm(!showAddForm)}
